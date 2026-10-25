@@ -185,7 +185,8 @@ extension ReceiptLayout {
         // MARK: Wrapping
 
         /// Greedy wrapping at spaces. A word wider than the line is broken between characters;
-        /// spaces at a break are dropped; a line break in the text always starts a new line.
+        /// spaces at a wrap are dropped, while spaces at the start of the text or after a line break
+        /// are kept as indentation; a line break in the text always starts a new line.
         private func wrap(_ glyphs: [Glyph], width: Int) -> [[Glyph]] {
             var wrapper = Wrapper(width: width)
             for glyph in glyphs {
@@ -258,6 +259,8 @@ extension ReceiptLayout {
         private var wordWidth = 0
         private var spaces: [Glyph] = []
         private var spacesWidth = 0
+        /// At the start of the text or just after a line break, where spaces are indentation.
+        private var isAtParagraphStart = true
 
         init(width: Int) {
             self.width = max(1, width)
@@ -279,6 +282,7 @@ extension ReceiptLayout {
             flush()
             spaces = []
             spacesWidth = 0
+            isAtParagraphStart = true
         }
 
         mutating func finish() -> [[Glyph]] {
@@ -294,10 +298,11 @@ extension ReceiptLayout {
             if !line.isEmpty, lineWidth + spacesWidth + wordWidth > width {
                 flush()
             }
-            if !line.isEmpty {
+            if !line.isEmpty || isAtParagraphStart {
                 line += spaces
                 lineWidth += spacesWidth
             }
+            isAtParagraphStart = false
             for glyph in word {
                 if !line.isEmpty, lineWidth + glyph.width > width {
                     flush()

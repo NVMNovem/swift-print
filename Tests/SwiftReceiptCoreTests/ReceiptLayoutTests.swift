@@ -57,6 +57,15 @@ struct ReceiptLayoutTests {
         #expect(layout([text("Stoofvleessausvanhethuis")], columns: 10).plainText == "Stoofvlees\nsausvanhet\nhuis")
     }
 
+    @Test("Leading spaces indent the text and each line after a break, but not a wrapped line")
+    func indentation() {
+        #expect(layout([text("   + Mayonaise\n  + Stoofvlees met saus")], columns: 16).plainText == """
+           + Mayonaise
+          + Stoofvlees
+        met saus
+        """)
+    }
+
     @Test("Line breaks in the text start new lines")
     func lineBreaks() {
         #expect(layout([text("a\n\nb")]).plainText == "a\n\nb")

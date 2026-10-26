@@ -16,12 +16,19 @@ public struct ReceiptCapabilities: OptionSet, Sendable, Hashable {
         self.rawValue = rawValue
     }
 
+    /// Underlined text.
     public static let underline = ReceiptCapabilities(rawValue: 1 << 0)
+    /// White text on a black background.
     public static let inverted = ReceiptCapabilities(rawValue: 1 << 1)
+    /// The printer's condensed font, ``ReceiptFont/secondary``.
     public static let secondaryFont = ReceiptCapabilities(rawValue: 1 << 2)
+    /// Raster images.
     public static let images = ReceiptCapabilities(rawValue: 1 << 3)
+    /// QR codes drawn by the printer.
     public static let qrCodes = ReceiptCapabilities(rawValue: 1 << 4)
+    /// A ``ReceiptCut/full`` cut.
     public static let fullCut = ReceiptCapabilities(rawValue: 1 << 5)
+    /// A ``ReceiptCut/partial`` cut.
     public static let partialCut = ReceiptCapabilities(rawValue: 1 << 6)
     /// The printer can be asked for its status.
     public static let status = ReceiptCapabilities(rawValue: 1 << 7)

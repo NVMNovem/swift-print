@@ -8,7 +8,9 @@
 /// A receipt placed at one paper width for one driver: every line, and everything that had to be
 /// printed differently from how it was written.
 public struct LaidOutReceipt: Sendable, Hashable {
+    /// The printed lines, top to bottom.
     public var lines: [ReceiptLine]
+    /// Everything printed differently from how it was written.
     public var degradations: [ReceiptDegradation]
 
     public init(lines: [ReceiptLine], degradations: [ReceiptDegradation] = []) {

@@ -7,7 +7,9 @@
 
 /// Text in one style.
 public struct StyledRun: Sendable, Hashable {
+    /// The characters.
     public var text: String
+    /// How they are printed.
     public var style: TextStyle
 
     public init(_ text: String, style: TextStyle = .plain) {

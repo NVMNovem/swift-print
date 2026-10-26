@@ -9,6 +9,7 @@
 public struct QRCode: ReceiptContent {
     let code: ReceiptQRCode
 
+    /// A QR code holding `payload`, `moduleSize` dots per module.
     public init(
         _ payload: String,
         moduleSize: Int = 6,

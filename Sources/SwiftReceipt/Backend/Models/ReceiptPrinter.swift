@@ -11,9 +11,13 @@
 /// queue, retry or remember. Each call opens its own connection, and two calls to one printer at
 /// once are the caller's to prevent.
 public struct ReceiptPrinter: Sendable {
+    /// A name for this printer, chosen by the application.
     public var id: String
+    /// Where the printer is reached.
     public var connection: ReceiptConnection
+    /// The protocol the printer speaks.
     public var driver: any ReceiptDriver
+    /// Paper, cut, feed and timeouts for every receipt.
     public var options: PrintOptions
 
     public init(
@@ -47,6 +51,7 @@ public struct ReceiptPrinter: Sendable {
         return rendered
     }
 
+    /// The bytes this printer would receive for the content. No I/O.
     public func render(_ content: some ReceiptContent) throws(ReceiptPrintError) -> RenderedReceipt {
         try render(ReceiptDocument(content))
     }
@@ -63,6 +68,7 @@ public struct ReceiptPrinter: Sendable {
         return outcome
     }
 
+    /// Renders and sends the content; see ``print(_:)-(ReceiptDocument)``.
     public func print(_ content: sending some ReceiptContent) async throws(ReceiptPrintError) -> PrintOutcome {
         try await print(ReceiptDocument(content))
     }

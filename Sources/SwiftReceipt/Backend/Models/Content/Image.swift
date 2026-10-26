@@ -9,6 +9,7 @@
 public struct Image: ReceiptContent {
     let image: ReceiptImage
 
+    /// The picture, as grayscale pixels.
     public init(_ image: ReceiptImage) {
         self.image = image
     }

@@ -13,12 +13,15 @@ import SwiftReceiptCore
 public struct MockReceiptDriver: ReceiptDriver {
     /// What one call to `send` does.
     public enum Response: Sendable, Hashable {
+        /// Accepts the receipt and answers with this acknowledgement.
         case success(PrintOutcome.Acknowledgement)
+        /// Throws this error.
         case failure(ReceiptPrintError)
     }
 
     /// Everything sent, and the responses still to give.
     public actor Journal {
+        /// Every receipt sent, in order, including those answered with a failure.
         public private(set) var sent: [RenderedReceipt] = []
         private var responses: [Response]
 
@@ -33,9 +36,13 @@ public struct MockReceiptDriver: ReceiptDriver {
         }
     }
 
+    /// What the pretend printer can do.
     public let supportedCapabilities: ReceiptCapabilities
+    /// Cells per line, one dot each.
     public let columns: Int
+    /// The answer to a status request, or `nil` for a printer that cannot report one.
     public let printerStatus: ReceiptPrinterStatus?
+    /// Everything sent, shared by every copy of this driver.
     public let journal: Journal
 
     /// - Parameters:

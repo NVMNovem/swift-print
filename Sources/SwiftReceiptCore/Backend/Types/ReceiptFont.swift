@@ -7,6 +7,8 @@
 
 /// The printer's own fonts: its standard one and, where it has one, a condensed one.
 public enum ReceiptFont: Sendable, Hashable, CaseIterable {
+    /// The printer's standard font.
     case primary
+    /// The printer's condensed font, where it has one.
     case secondary
 }

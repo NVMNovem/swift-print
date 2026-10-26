@@ -11,7 +11,9 @@
 /// or, when nothing leads, the first trailing one. Every other column keeps its natural width — so
 /// a product name wraps and its price stays on the first line.
 public struct ReceiptRow: Sendable, Hashable {
+    /// Columns held to the leading edge, in order.
     public var leading: [[StyledRun]]
+    /// Columns held to the trailing edge, in order.
     public var trailing: [[StyledRun]]
 
     public init(leading: [[StyledRun]], trailing: [[StyledRun]] = []) {

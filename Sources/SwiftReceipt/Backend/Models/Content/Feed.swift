@@ -9,6 +9,7 @@
 public struct Feed: ReceiptContent {
     let lines: Int
 
+    /// `lines` empty lines; a negative count is none.
     public init(_ lines: Int = 1) {
         self.lines = max(0, lines)
     }

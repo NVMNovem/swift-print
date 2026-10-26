@@ -13,6 +13,7 @@ public struct Group: ReceiptContent {
         self.nodes = nodes
     }
 
+    /// The content, as one piece.
     public init<Content: ReceiptContent>(@ReceiptBuilder content: () -> Content) {
         self.nodes = content()._receiptNodes().nodes
     }

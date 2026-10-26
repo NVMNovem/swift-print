@@ -9,8 +9,11 @@
 public enum ReceiptDegradation: Sendable, Hashable {
     /// A style the printer lacks was left off: underline, inverted or the secondary font.
     case styleUnavailable(ReceiptCapabilities)
+    /// Text was printed at the printer's largest magnification instead.
     case magnificationReduced(requested: ReceiptTextSize, printed: ReceiptTextSize)
+    /// An image was left out on a printer without images.
     case imageOmitted
+    /// A QR code was left out on a printer without QR codes.
     case qrCodeOmitted
     /// The fixed columns of a row did not leave room for the flexible one; the row was printed as
     /// wrapped text instead.

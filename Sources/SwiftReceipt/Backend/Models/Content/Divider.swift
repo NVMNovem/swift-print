@@ -9,6 +9,7 @@
 public struct Divider: ReceiptContent {
     let character: Character
 
+    /// A line of `character`, as many as fit the paper.
     public init(_ character: Character = "-") {
         self.character = character
     }

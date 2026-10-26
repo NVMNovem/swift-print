@@ -19,11 +19,7 @@ trait, which brings in [swift-escpos](https://github.com/NVMNovem/swift-escpos):
 
 ```swift
 dependencies: [
-    .package(
-        url: "https://github.com/NVMNovem/swift-receipt.git",
-        branch: "main",
-        traits: ["ESCPOS"]
-    ),
+    .package(url: "https://github.com/NVMNovem/swift-receipt.git", from: "1.0.0", traits: ["ESCPOS"])
 ],
 ```
 

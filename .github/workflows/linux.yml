@@ -1,0 +1,25 @@
+name: Linux
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    name: Swift ${{ matrix.swift }}
+    runs-on: ubuntu-latest
+    container: swift:${{ matrix.swift }}
+    strategy:
+      fail-fast: false
+      matrix:
+        # 6.2 is the package's swift-tools-version.
+        swift: ["6.2", "latest"]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Test without traits
+        run: swift test
+
+      - name: Test with the ESCPOS trait
+        run: swift test --traits ESCPOS

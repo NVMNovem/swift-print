@@ -10,7 +10,7 @@ would misread.
 ## Requirements
 
 - Swift 6.2 or later
-- iOS 17, macOS 14, tvOS 17, watchOS 10 or visionOS 1
+- iOS 17, macOS 14, tvOS 17, watchOS 10, visionOS 1, or Linux
 
 ## Installation
 

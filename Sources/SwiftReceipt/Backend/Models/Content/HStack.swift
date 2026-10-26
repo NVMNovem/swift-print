@@ -14,6 +14,7 @@
 public struct HStack: ReceiptContent {
     let children: [ReceiptNode]
 
+    /// A row of the content's text columns.
     public init<Content: ReceiptContent>(@ReceiptBuilder content: () -> Content) {
         self.children = content()._receiptNodes().nodes
     }

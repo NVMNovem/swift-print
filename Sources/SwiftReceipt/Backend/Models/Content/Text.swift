@@ -13,6 +13,7 @@ public struct Text: ReceiptContent {
     var fragments: [TextFragment]
     var alignment: ReceiptAlignment?
 
+    /// Text that prints `string`. A line break in it always starts a new line.
     public init(_ string: String) {
         self.fragments = [TextFragment(string: string, style: StyleOverride())]
     }
@@ -25,6 +26,7 @@ public struct Text: ReceiptContent {
         _ReceiptNodes([.text(fragments, alignment: alignment)])
     }
 
+    /// Both texts on one line, each in its own style.
     public static func + (lhs: Text, rhs: Text) -> Text {
         var text = lhs
         text.fragments += rhs.fragments
@@ -33,26 +35,32 @@ public struct Text: ReceiptContent {
 
     // MARK: - Modifiers
 
+    /// Bold, for every fragment that has not chosen otherwise.
     public func bold(_ isOn: Bool = true) -> Text {
         styled { $0.isBold = isOn }
     }
 
+    /// Underlined, for every fragment that has not chosen otherwise.
     public func underline(_ isOn: Bool = true) -> Text {
         styled { $0.isUnderlined = isOn }
     }
 
+    /// White on black, for every fragment that has not chosen otherwise.
     public func inverted(_ isOn: Bool = true) -> Text {
         styled { $0.isInverted = isOn }
     }
 
+    /// The magnification of every fragment that has not chosen its own.
     public func size(_ size: ReceiptTextSize) -> Text {
         styled { $0.size = size }
     }
 
+    /// The printer font of every fragment that has not chosen its own.
     public func font(_ font: ReceiptFont) -> Text {
         styled { $0.font = font }
     }
 
+    /// Where the text's lines sit across the paper, whatever the content around it says.
     public func alignment(_ alignment: ReceiptAlignment) -> Text {
         var text = self
         text.alignment = alignment

@@ -10,6 +10,7 @@ public struct VStack: ReceiptContent {
     let children: [ReceiptNode]
     let spacing: Int
 
+    /// The content line after line, `spacing` empty lines apart.
     public init<Content: ReceiptContent>(spacing: Int = 0, @ReceiptBuilder content: () -> Content) {
         self.children = content()._receiptNodes().nodes
         self.spacing = max(0, spacing)

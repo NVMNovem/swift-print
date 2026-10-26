@@ -13,7 +13,9 @@
 /// double-width character or a character printed as three is accounted for. The same document and
 /// metrics always produce the same lines.
 public struct ReceiptLayout: Sendable {
+    /// How wide text is on the printer.
     public let metrics: any TextMetrics
+    /// What the printer can do; anything else is degraded.
     public let capabilities: ReceiptCapabilities
 
     public init(metrics: any TextMetrics, capabilities: ReceiptCapabilities) {
@@ -21,6 +23,7 @@ public struct ReceiptLayout: Sendable {
         self.capabilities = capabilities
     }
 
+    /// The document's lines on this paper, and everything printed differently.
     public func layout(_ document: ReceiptDocument) -> LaidOutReceipt {
         var context = Context(metrics: metrics, capabilities: capabilities)
         for block in document.blocks {

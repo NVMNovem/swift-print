@@ -7,6 +7,8 @@
 
 /// The width of the paper roll in the printer.
 public enum ReceiptPaperWidth: Int, Sendable, Hashable, CaseIterable {
+    /// 58 mm paper.
     case millimeters58 = 58
+    /// 80 mm paper.
     case millimeters80 = 80
 }

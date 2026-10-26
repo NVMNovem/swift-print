@@ -11,8 +11,10 @@
 /// ``ReceiptDocument`` immediately and keeps nothing else. There is no state, no environment and no
 /// identity: a receipt is a function of its input, so the same input always prints the same bytes.
 public protocol ReceiptContent {
+    /// The type of content this content is made of.
     associatedtype Body: ReceiptContent
 
+    /// The content this content is made of.
     @ReceiptBuilder var body: Body { get }
 
     /// The content as the framework's internal nodes. Implemented by the built-in content only.

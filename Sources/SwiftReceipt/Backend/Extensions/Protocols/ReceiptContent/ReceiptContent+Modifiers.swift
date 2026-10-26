@@ -11,18 +11,22 @@ extension ReceiptContent {
         modified { $0.isBold = isOn }
     }
 
+    /// Underline for all text inside that has not chosen otherwise.
     public func underline(_ isOn: Bool = true) -> ModifiedContent {
         modified { $0.isUnderlined = isOn }
     }
 
+    /// White on black for all text inside that has not chosen otherwise.
     public func inverted(_ isOn: Bool = true) -> ModifiedContent {
         modified { $0.isInverted = isOn }
     }
 
+    /// The magnification of all text inside that has not chosen its own.
     public func size(_ size: ReceiptTextSize) -> ModifiedContent {
         modified { $0.size = size }
     }
 
+    /// The printer font of all text inside that has not chosen its own.
     public func font(_ font: ReceiptFont) -> ModifiedContent {
         modified { $0.font = font }
     }

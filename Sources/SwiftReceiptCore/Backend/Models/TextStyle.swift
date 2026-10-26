@@ -7,10 +7,15 @@
 
 /// How a run of text is printed.
 public struct TextStyle: Sendable, Hashable {
+    /// Whether the text is bold.
     public var isBold: Bool
+    /// Whether the text is underlined.
     public var isUnderlined: Bool
+    /// Whether the text is white on black.
     public var isInverted: Bool
+    /// The magnification.
     public var size: ReceiptTextSize
+    /// The printer font.
     public var font: ReceiptFont
 
     public init(

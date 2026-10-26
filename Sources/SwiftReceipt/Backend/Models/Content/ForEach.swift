@@ -9,6 +9,7 @@
 public struct ForEach: ReceiptContent {
     let nodes: [ReceiptNode]
 
+    /// The content for every element of `data`, in order.
     public init<Data: Sequence, Content: ReceiptContent>(
         _ data: Data,
         @ReceiptBuilder content: (Data.Element) -> Content

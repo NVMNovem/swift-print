@@ -7,7 +7,9 @@
 
 /// A receipt as the bytes one driver would send, with everything printed differently.
 public struct RenderedReceipt: Sendable, Hashable {
+    /// What the driver sends to the printer.
     public var bytes: [UInt8]
+    /// Everything printed differently from how it was written.
     public var degradations: [ReceiptDegradation]
 
     public init(bytes: [UInt8], degradations: [ReceiptDegradation] = []) {

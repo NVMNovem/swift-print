@@ -13,6 +13,7 @@ internal import SwiftESCPOS
 /// The identifier is the one swift-escpos uses (`durapos-dpt201`, `epson-tm`, `generic-escpos`)
 /// and may be persisted.
 public struct ReceiptESCPOSProfile: Sendable, Hashable, Identifiable {
+    /// The swift-escpos identifier.
     public let id: String
 
     /// The profile with this identifier, or `nil` when swift-escpos does not know it.
@@ -32,6 +33,7 @@ public struct ReceiptESCPOSProfile: Sendable, Hashable, Identifiable {
     /// DURAPOS DPT201-URE-BK. Unvalidated until its hardware tests have run.
     public static let duraposDPT201 = ReceiptESCPOSProfile(knownID: ESCPOSProfile.duraposDPT201.id)
 
+    /// The model's name, for people.
     public var name: String {
         escpos.name
     }

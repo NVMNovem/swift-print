@@ -18,9 +18,13 @@ public struct PrintOutcome: Sendable, Hashable {
         case completionConfirmed
     }
 
+    /// The bytes the printer accepted.
     public var bytesSent: Int
+    /// What the printer said afterwards.
     public var acknowledgement: Acknowledgement
+    /// Everything printed differently from how it was written.
     public var degradations: [ReceiptDegradation]
+    /// How long sending took.
     public var duration: Duration
 
     public init(

@@ -13,8 +13,10 @@ internal import SwiftESCPOS
 /// Text is printed in the best table the profile holds for Western European text — one with `€`
 /// where there is one — and everything else is left to the profile's capabilities.
 public struct ESCPOSReceiptDriver: ReceiptDriver {
+    /// The printer model.
     public let profile: ReceiptESCPOSProfile
 
+    /// A driver for this printer model.
     public init(profile: ReceiptESCPOSProfile) {
         self.profile = profile
     }

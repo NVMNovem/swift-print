@@ -7,6 +7,7 @@
 
 /// In an ``HStack``, the point where leading columns end and trailing ones begin. Elsewhere, nothing.
 public struct Spacer: ReceiptContent {
+    /// The split between leading and trailing columns.
     public init() {}
 
     public var body: Never {

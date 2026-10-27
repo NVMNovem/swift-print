@@ -1,8 +1,8 @@
-# SwiftReceipt
+# SwiftPrint
 
 Declare receipts like SwiftUI views and print them on thermal receipt printers.
 
-SwiftReceipt lays a receipt out for the printer's paper — wrapping text, keeping prices in their
+SwiftPrint lays a receipt out for the printer's paper — wrapping text, keeping prices in their
 column, scaling and dithering images — renders it through a driver and sends it. What a printer
 cannot do is left off or printed differently, and reported, instead of being sent as bytes it
 would misread.
@@ -19,23 +19,23 @@ trait, which brings in [swift-escpos](https://github.com/NVMNovem/swift-escpos):
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/NVMNovem/swift-receipt.git", from: "1.0.0", traits: ["ESCPOS"])
+    .package(url: "https://github.com/NVMNovem/swift-print.git", from: "1.0.0", traits: ["ESCPOS"])
 ],
 ```
 
 Then add the product to your target:
 
 ```swift
-.product(name: "SwiftReceipt", package: "swift-receipt")
+.product(name: "SwiftPrint", package: "swift-print")
 ```
 
 The package has three libraries:
 
 | Library | Use |
 | --- | --- |
-| `SwiftReceipt` | The receipt DSL, `ReceiptPrinter` and, with the `ESCPOS` trait, the ESC/POS driver. Re-exports `SwiftReceiptCore`. |
-| `SwiftReceiptCore` | The printer-independent document model, layout and `ReceiptDriver` protocol. |
-| `SwiftReceiptTesting` | `MockReceiptDriver`, for testing how your app prints without a printer. |
+| `SwiftPrint` | The receipt DSL, `ReceiptPrinter` and, with the `ESCPOS` trait, the ESC/POS driver. Re-exports `SwiftPrintCore`. |
+| `SwiftPrintCore` | The printer-independent document model, layout and `ReceiptDriver` protocol. |
+| `SwiftPrintTesting` | `MockReceiptDriver`, for testing how your app prints without a printer. |
 
 ## Usage
 
@@ -44,7 +44,7 @@ The package has three libraries:
 A receipt is a type that conforms to `ReceiptContent`, built like a SwiftUI view:
 
 ```swift
-import SwiftReceipt
+import SwiftPrint
 
 struct OrderLine {
     let quantity: Int
@@ -142,9 +142,9 @@ print(String(decoding: rendered.bytes, as: UTF8.self))
 ## Documentation
 
 The libraries are documented with DocC catalogs in
-[`Sources/SwiftReceipt/SwiftReceipt.docc`](Sources/SwiftReceipt/SwiftReceipt.docc),
-[`Sources/SwiftReceiptCore/SwiftReceiptCore.docc`](Sources/SwiftReceiptCore/SwiftReceiptCore.docc) and
-[`Sources/SwiftReceiptTesting/SwiftReceiptTesting.docc`](Sources/SwiftReceiptTesting/SwiftReceiptTesting.docc).
+[`Sources/SwiftPrint/SwiftPrint.docc`](Sources/SwiftPrint/SwiftPrint.docc),
+[`Sources/SwiftPrintCore/SwiftPrintCore.docc`](Sources/SwiftPrintCore/SwiftPrintCore.docc) and
+[`Sources/SwiftPrintTesting/SwiftPrintTesting.docc`](Sources/SwiftPrintTesting/SwiftPrintTesting.docc).
 In Xcode, open `Package.swift` and choose **Product › Build Documentation**.
 
 ## Development

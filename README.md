@@ -305,19 +305,6 @@ let preview = Printer(driver: PlainTextReceiptDriver())
 print(String(decoding: try preview.render(receipt).bytes, as: UTF8.self))
 ```
 
-## Breaking changes
-
-SwiftPrint is still in development, and its API changes without compatibility shims:
-
-- Content no longer prints as a receipt by default. Declare a `PrintDocument` whose body is a
-  `ReceiptLayout` or `LabelLayout`; `Printer` takes documents, not content.
-- The resolved model in `SwiftPrintCore` is `ResolvedDocument`; the layout engines take its
-  content.
-- `PrintOptions` groups its options by layout: `PrintOptions(receipt: ReceiptOptions(paperWidth:
-  cut: feedLines:), label: LabelOptions(media:))`.
-- Size and layout failures are typed: `.layoutUnsupported`, `.paperWidthUnsupported`,
-  `.invalidDimension`, `.exceedsPrinter` and `.exceedsMedia`.
-
 ## Documentation
 
 [`Docs/Architecture.md`](Docs/Architecture.md) explains how content, layout, rendering, encoding

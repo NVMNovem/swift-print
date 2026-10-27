@@ -5,16 +5,16 @@
 //  Created by Damian Van de Kauter on 25/10/2026.
 //
 
-/// A printer: which driver speaks to it, what is done around each receipt and, optionally, how its
-/// bytes reach it.
+/// A printer: which driver speaks to it, how its jobs are produced and, optionally, how its bytes
+/// reach it.
 ///
-/// This is the one API an application prints through. It lays out with the layout the document's
-/// format names, renders with the driver and, given a transport, sends; it does not queue, retry or
-/// remember. Two calls to one printer at once are the caller's to prevent.
+/// This is the one API an application prints through. It lays a document out with the layout the
+/// document declares, renders it with the driver and, given a transport, sends it; it does not
+/// queue, retry or remember. Two calls to one printer at once are the caller's to prevent.
 public struct Printer: Sendable {
-    /// The protocol the printer speaks.
+    /// The protocol the printer speaks, and what the printer can do.
     public var driver: any PrintDriver
-    /// Paper, cut and feed for every receipt.
+    /// How every job is produced: the receipt paper, cut and feed, and the label media.
     public var options: PrintOptions
     /// How bytes reach the printer, or `nil` for a printer that only renders.
     public var transport: (any PrintTransport)?
@@ -34,25 +34,31 @@ public struct Printer: Sendable {
         driver.capabilities(for: options)
     }
 
-    /// The document placed for this printer, by the layout its format names. No I/O.
+    /// The document placed for this printer by the layout it declares. No I/O.
     ///
-    /// Throws ``PrintError/Reason/unsupported(_:)`` when the driver does not print the format, such
-    /// as a label on a receipt printer.
-    public func layout(_ document: PrintDocument) throws(PrintError) -> LaidOutDocument {
+    /// Throws ``PrintError/Reason/layoutUnsupported(_:)`` when the driver does not print that
+    /// layout, such as a label on a receipt printer; the layout is never swapped for another.
+    public func layout(_ document: ResolvedDocument) throws(PrintError) -> LaidOutDocument {
         switch document.format {
         case .receipt:
             let driver = try receiptDriver()
             let metrics = try driver.metrics(for: options)
-            return .receipt(ReceiptLayoutEngine(metrics: metrics, capabilities: capabilities).layout(document))
+            return .receipt(ReceiptLayoutEngine(metrics: metrics, capabilities: capabilities).layout(document.content))
         case .label(let size):
             let driver = try labelDriver()
             let metrics = try driver.labelMetrics(for: options)
-            return .label(try LabelLayoutEngine(metrics: metrics, capabilities: capabilities).layout(document.content, size: size))
+            let engine = LabelLayoutEngine(metrics: metrics, capabilities: capabilities, media: options.label.media)
+            return .label(try engine.layout(document.content, size: size))
         }
     }
 
+    /// The document placed for this printer; see ``layout(_:)-(ResolvedDocument)``.
+    public func layout(_ document: some PrintDocument) throws(PrintError) -> LaidOutDocument {
+        try layout(ResolvedDocument(document))
+    }
+
     /// The bytes this printer would receive. No I/O.
-    public func render(_ document: PrintDocument) throws(PrintError) -> RenderedDocument {
+    public func render(_ document: ResolvedDocument) throws(PrintError) -> RenderedDocument {
         switch try layout(document) {
         case .receipt(let receipt):
             var rendered = try receiptDriver().render(receipt, options: options)
@@ -63,9 +69,9 @@ public struct Printer: Sendable {
         }
     }
 
-    /// The bytes this printer would receive for the content. No I/O.
-    public func render(_ content: some PrintContent) throws(PrintError) -> RenderedDocument {
-        try render(PrintDocument(content))
+    /// The bytes this printer would receive for the document. No I/O.
+    public func render(_ document: some PrintDocument) throws(PrintError) -> RenderedDocument {
+        try render(ResolvedDocument(document))
     }
 
     /// Renders a document and sends it over the transport.
@@ -73,7 +79,7 @@ public struct Printer: Sendable {
     /// Success means the printer accepted every byte — not that paper came out, unless the outcome's
     /// acknowledgement is ``PrintOutcome/Acknowledgement/completionConfirmed``. On failure,
     /// ``PrintError/delivery`` says whether trying again could print it twice.
-    public func print(_ document: PrintDocument) async throws(PrintError) -> PrintOutcome {
+    public func print(_ document: ResolvedDocument) async throws(PrintError) -> PrintOutcome {
         guard let transport else {
             throw PrintError(delivery: .notSent, reason: .unsupported("sending, without a transport"))
         }
@@ -83,9 +89,9 @@ public struct Printer: Sendable {
         return outcome
     }
 
-    /// Renders and sends the content; see ``print(_:)-(PrintDocument)``.
-    public func print(_ content: sending some PrintContent) async throws(PrintError) -> PrintOutcome {
-        try await print(PrintDocument(content))
+    /// Renders and sends the document; see ``print(_:)-(ResolvedDocument)``.
+    public func print(_ document: sending some PrintDocument) async throws(PrintError) -> PrintOutcome {
+        try await print(ResolvedDocument(document))
     }
 
     /// Asks the printer how it is, where the transport and printer can answer.
@@ -100,14 +106,14 @@ public struct Printer: Sendable {
 
     private func receiptDriver() throws(PrintError) -> any ReceiptDriver {
         guard let driver = driver as? any ReceiptDriver else {
-            throw PrintError(delivery: .notSent, reason: .unsupported("receipts, with this driver"))
+            throw PrintError(delivery: .notSent, reason: .layoutUnsupported(.receipt))
         }
         return driver
     }
 
     private func labelDriver() throws(PrintError) -> any LabelDriver {
         guard let driver = driver as? any LabelDriver else {
-            throw PrintError(delivery: .notSent, reason: .unsupported("labels, with this driver"))
+            throw PrintError(delivery: .notSent, reason: .layoutUnsupported(.label))
         }
         return driver
     }

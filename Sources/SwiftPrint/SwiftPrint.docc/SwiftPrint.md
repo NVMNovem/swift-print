@@ -4,16 +4,16 @@ Declare receipts and labels like SwiftUI views and render them for receipt and l
 
 ## Overview
 
-SwiftPrint turns content you declare in Swift into the bytes a printer understands. You describe
-what is printed with ``PrintContent`` — text, stacks, dividers, images, QR codes and barcodes — and
-hand it to a ``Printer``, which lays it out with the layout its format names and renders it
-through a driver.
+SwiftPrint turns documents you declare in Swift into the bytes a printer understands. A
+``PrintDocument`` declares its root layout — a ``ReceiptLayout`` or a ``LabelLayout`` — and the
+layout holds the content: text, stacks, dividers, images, QR codes and barcodes. A ``Printer``
+lays the document out with that layout and renders it through a driver.
 
 ```swift
-struct ProductLabel: PrintContent {
+struct ProductLabel: PrintDocument {
     let number: String
 
-    var body: some PrintContent {
+    var body: some PrintLayout {
         LabelLayout(width: .millimeters(100), height: .millimeters(50)) {
             VStack(alignment: .leading) {
                 Text("Product \(number)").size(.double)
@@ -26,8 +26,9 @@ struct ProductLabel: PrintContent {
 }
 ```
 
-Content in a ``LabelLayout`` prints as a label of that size; any other content, or content in a
-``ReceiptLayout``, as a receipt. The same components work in both, within what the printer can do.
+Every document has exactly one root layout, and the compiler enforces it: a body of plain content
+is not a document, and a layout cannot be placed inside content. Nothing prints as a receipt by
+default. The same components work in both layouts, within what the printer can do.
 
 Content is a function of its input: there is no state, no environment and no identity, so the same
 content always prints the same bytes. On a receipt, what a printer cannot do is left off or printed
@@ -42,13 +43,18 @@ driver and transport protocols. Drivers live in `SwiftPrintESCPOS` and `SwiftPri
 
 - <doc:GettingStarted>
 - <doc:PrintingLabels>
-- ``PrintContent``
+- ``PrintDocument``
 - ``Printer``
 
 ### Layouts
 
+- ``PrintLayout``
 - ``ReceiptLayout``
 - ``LabelLayout``
+
+### Content
+
+- ``PrintContent``
 
 ### Text
 

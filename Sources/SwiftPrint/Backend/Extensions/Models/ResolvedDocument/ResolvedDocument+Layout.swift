@@ -1,23 +1,22 @@
 //
-//  PrintDocument+Content.swift
+//  ResolvedDocument+Layout.swift
 //  swift-print
 //
 //  Created by Damian Van de Kauter on 25/10/2026.
 //
 
-extension PrintDocument {
-    /// The document the content describes: a label when the content is a ``LabelLayout``, a receipt
-    /// otherwise.
-    public init(_ content: some PrintContent) {
-        let nodes = content._printNodes().nodes
-        if nodes.count == 1, case .layout(let format, let children) = nodes[0] {
-            self.init(format: format, content: Self.elements(children, style: StyleOverride(), alignment: .leading))
-        } else {
-            self.init(format: .receipt, content: Self.elements(nodes, style: StyleOverride(), alignment: .leading))
-        }
+extension ResolvedDocument {
+    /// The document resolved through its root layout: the layout's format, and its content with
+    /// every style and alignment resolved onto the text, pictures and codes.
+    public init(_ document: some PrintDocument) {
+        self = document.body._resolved()
     }
 
-    /// The nodes with every style and alignment resolved onto the text, pictures and codes.
+    /// A layout's format and content nodes, resolved.
+    init(format: Format, nodes: [PrintNode]) {
+        self.init(format: format, content: Self.elements(nodes, style: StyleOverride(), alignment: .leading))
+    }
+
     private static func elements(
         _ nodes: [PrintNode],
         style: StyleOverride,
@@ -50,8 +49,6 @@ extension PrintDocument {
             case .padding(let insets, let children):
                 let inner = Self.elements(children, style: style, alignment: alignment)
                 elements.append(.padding(insets, inner.count == 1 ? inner[0] : .verticalStack(inner, spacing: .zero)))
-            case .layout(_, let children):
-                elements += Self.elements(children, style: style, alignment: alignment)
             }
         }
         return elements

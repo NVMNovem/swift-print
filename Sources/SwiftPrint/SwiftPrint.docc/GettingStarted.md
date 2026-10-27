@@ -4,9 +4,9 @@ Declare a receipt, preview it as text and render it for a printer.
 
 ## Overview
 
-Content is a type that conforms to ``PrintContent``. Its ``PrintContent/body`` is built with
-``PrintBuilder``, so it takes the same statements as a SwiftUI view: content, plain strings, `if`,
-`switch` and `for`.
+A document is a type that conforms to ``PrintDocument``. Its ``PrintDocument/body`` is its root
+layout — here a ``ReceiptLayout`` — and the layout's content is built with ``PrintBuilder``, so it
+takes the same statements as a SwiftUI view: content, plain strings, `if`, `switch` and `for`.
 
 ### Declare a receipt
 
@@ -19,34 +19,36 @@ struct OrderLine {
     let price: String
 }
 
-struct OrderReceipt: PrintContent {
+struct OrderReceipt: PrintDocument {
     let number: Int
     let lines: [OrderLine]
     let total: String
     let note: String?
 
-    var body: some PrintContent {
-        VStack(spacing: .lines(1)) {
-            Text("#\(number)").bold().size(.double).alignment(.center)
-            Divider()
-            ForEach(lines) { line in
-                HStack {
-                    Text("\(line.quantity)×")
-                    Text(line.name)
-                    Spacer()
-                    Text(line.price)
+    var body: some PrintLayout {
+        ReceiptLayout {
+            VStack(spacing: .lines(1)) {
+                Text("#\(number)").bold().size(.double).alignment(.center)
+                Divider()
+                ForEach(lines) { line in
+                    HStack {
+                        Text("\(line.quantity)×")
+                        Text(line.name)
+                        Spacer()
+                        Text(line.price)
+                    }
                 }
+                Divider()
+                HStack {
+                    Text("Total").bold()
+                    Spacer()
+                    Text(total).bold()
+                }
+                if let note {
+                    Text(note)
+                }
+                QRCode("https://example.com/orders/\(number)").alignment(.center)
             }
-            Divider()
-            HStack {
-                Text("Total").bold()
-                Spacer()
-                Text(total).bold()
-            }
-            if let note {
-                Text(note)
-            }
-            QRCode("https://example.com/orders/\(number)").alignment(.center)
         }
     }
 }
@@ -62,7 +64,11 @@ struct OrderReceipt: PrintContent {
 - Modifiers such as `bold()`, `size(_:)`, `font(_:)` and `alignment(_:)` apply to everything inside
   that has not chosen otherwise. Texts joined with `+` print on one line, each in its own style.
 
-Content outside any layout is a receipt; wrapping it in ``ReceiptLayout`` says so explicitly.
+The layout is required: a body of plain content does not compile. To reuse content in several
+documents, make it a ``PrintContent`` type and place it inside each document's layout.
+
+``ReceiptLayout`` describes only how content flows. The paper it prints on, and the cut and feed
+after it, are the print job's, chosen with `PrintOptions`.
 
 ### Preview it as text
 
@@ -70,12 +76,25 @@ Content outside any layout is a receipt; wrapping it in ``ReceiptLayout`` says s
 and codes as placeholders, which suits previews, logs and tests:
 
 ```swift
-let preview = Printer(driver: PlainTextReceiptDriver(), options: PrintOptions(paperWidth: .millimeters80))
+let preview = Printer(driver: PlainTextReceiptDriver())
 let rendered = try preview.render(receipt)
 print(String(decoding: rendered.bytes, as: UTF8.self))
 ```
 
-``Printer/render(_:)-(PrintDocument)`` and ``Printer/layout(_:)`` do no I/O.
+``Printer/render(_:)-(PrintDocument)`` and ``Printer/layout(_:)-(PrintDocument)`` do no I/O.
+
+### Choose the job's options
+
+`PrintOptions` configures the job, not the document. For a receipt: the paper roll, which decides
+the width the content wraps at, and the cut and feed after it.
+
+```swift
+let narrow = Printer(
+    driver: PlainTextReceiptDriver(),
+    options: PrintOptions(receipt: ReceiptOptions(paperWidth: .millimeters58, cut: nil, feedLines: 4))
+)
+let ticket = try narrow.render(receipt) // the same receipt, wrapped at 58 mm
+```
 
 ### Render it for a printer
 

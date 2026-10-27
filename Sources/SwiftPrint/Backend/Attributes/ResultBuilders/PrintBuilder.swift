@@ -18,6 +18,12 @@ public enum PrintBuilder {
         Text(string)
     }
 
+    /// A layout is refused: it is a document's root, never content, so a document has exactly one.
+    @available(*, unavailable, message: "A layout is a document's root; it cannot be placed inside content or another layout.")
+    public static func buildExpression<Layout: PrintLayout>(_ layout: Layout) -> Group {
+        fatalError("A layout cannot be content.")
+    }
+
     /// An empty block: nothing.
     public static func buildBlock() -> Group {
         Group(nodes: [])

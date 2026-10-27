@@ -6,8 +6,9 @@ Render labels for ZPL II printers with swift-zpl.
 
 ``ZPLDriver`` turns a laid-out label into one `ZPLLabel` of `ZPLCommand`s — `^PW` and `^LL` from the
 label's size, then one field per element — and encodes it with swift-zpl's `ZPLEncoder`, which
-checks every command against the printer's `ZPLProfile`. It is a `LabelDriver`: a receipt document
-is refused.
+checks every command against the printer's `ZPLProfile`. It is a `LabelDriver`: a `ReceiptLayout`
+document is refused with `.layoutUnsupported(.receipt)`, and the receipt options in `PrintOptions` —
+paper width, cut, feed — are never read.
 
 ```swift
 import SwiftPrint
@@ -43,15 +44,16 @@ centred line, so its size is known.
 
 ### Nothing is left out
 
-A label wider than the printhead, content taller than the label, a QR code or image on a profile
+A label wider than the printhead or the configured media, content taller than the label, a QR code or image on a profile
 without them, an underlined or inverted style, a character the label's character set cannot hold
 or data a barcode cannot encode throws a `PrintError`. Encoder refusals keep swift-zpl's
 description in `PrintError.Reason.renderingFailed(_:)`.
 
 ### Setup and sending
 
-Media setup — `^MN`, `^MT`, `^MM`, `^PR`, `~SD` — goes in the driver's `setup`, copies in its
-`quantity`. The driver does no I/O: send the bytes with `SwiftZPLNetwork`, or adapt it to a
+The label stock loaded is the job's, in `LabelOptions.media`; layout refuses a label larger than
+it. ZPL-only media setup — `^MN`, `^MT`, `^MM`, `^PR`, `~SD` — goes in the driver's `setup`,
+copies in its `quantity`. The driver does no I/O: send the bytes with `SwiftZPLNetwork`, or adapt it to a
 `PrintTransport` to print through `Printer`. `PrinterStatus.init(_:)` maps the `ZPLHostStatus` its
 connection reads.
 

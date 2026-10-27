@@ -44,8 +44,8 @@ protocol is its own library.
 
 | Library | Import it for |
 | --- | --- |
-| `SwiftPrint` | The declarative content (`PrintContent`, `Text`, `VStack`, `ReceiptLayout`, `LabelLayout`, …) and `Printer`. Re-exports `SwiftPrintCore`. |
-| `SwiftPrintCore` | The printer-independent document model, both layout engines and the driver and transport protocols. No dependencies. |
+| `SwiftPrint` | `PrintDocument`, the layouts (`ReceiptLayout`, `LabelLayout`), the content (`Text`, `VStack`, …) and `Printer`. Re-exports `SwiftPrintCore`. |
+| `SwiftPrintCore` | The printer-independent document model, both layout engines, `PrintOptions` and the driver and transport protocols. No dependencies. |
 | `SwiftPrintESCPOS` | `ESCPOSDriver`, which renders receipts with swift-escpos. Re-exports `SwiftESCPOS`. |
 | `SwiftPrintZPL` | `ZPLDriver`, which renders labels with swift-zpl. Re-exports `SwiftZPL`. |
 | `SwiftPrintTesting` | `MockDriver` and `MockTransport`, for testing how your app prints without a printer. |
@@ -53,20 +53,57 @@ protocol is its own library.
 None of them depends on SwiftNIO. The protocol libraries' network modules, `SwiftESCPOSNetwork`
 and `SwiftZPLNetwork`, are added to your target only if you send with them.
 
-## Documents and content
+## Documents and layouts
 
-Content is a type conforming to `PrintContent`, built like a SwiftUI view. The framework turns it
-into a `PrintDocument`: the content as `PrintElement`s, and the layout it is placed with.
+**Every document declares its root layout.** A `PrintDocument`'s `body` is a `ReceiptLayout` or a
+`LabelLayout`, and the layout holds the content:
 
-- **`ReceiptLayout`** — line after line at the paper's width, as long as the content needs. Content
-  outside any layout is a receipt.
-- **`LabelLayout(width:height:)`** — a label of a fixed size; content is measured and positioned
-  within it, and refused when it does not fit.
+```swift
+import SwiftPrint
+
+struct OrderReceipt: PrintDocument {
+    var body: some PrintLayout {
+        ReceiptLayout {
+            Text("Order #42")
+            Divider()
+            Text("Fries")
+        }
+    }
+}
+```
+
+The compiler enforces this. A body of plain content does not conform to `PrintDocument`, and a
+layout is not content, so a layout cannot be nested in another and a document has exactly one root.
+Nothing is a receipt by default, and the printer never picks a layout for you: a driver that does
+not print the declared layout refuses it with `PrintError.Reason.layoutUnsupported(_:)`.
+
+- **`ReceiptLayout`** — content flows line after line and the document is as long as its content.
+  Its width is not part of the document: it is the printable width of the paper configured for the
+  job, so the same receipt prints on 58 mm and 80 mm rolls.
+- **`LabelLayout(width:height:)`** — a canvas of a fixed size, because a label is designed for
+  specific label stock. Content is measured and positioned within it and refused when it does not
+  fit. Nothing is clipped, scaled or substituted.
 
 The same components — `Text`, `VStack`, `HStack`, `Spacer`, `Divider`, `Image`, `QRCode`,
 `Barcode`, `ForEach`, `Group` — work in both, within what the printer can do. A receipt prints
 what a printer lacks differently, or leaves it off, and reports it; a label has no room to reflow,
-so it refuses with a `PrintError` instead.
+so it refuses with a `PrintError` instead. Reusable pieces conform to `PrintContent`.
+
+## Who decides what
+
+| Part | Decides |
+| --- | --- |
+| `PrintDocument` | What is printed. |
+| `ReceiptLayout` | How a receipt's content flows: wrapping, alignment, spacing, a variable height. |
+| `LabelLayout` | A label's fixed canvas: its size, positions and overflow. |
+| `PrintOptions` | How a job is produced: the receipt paper, cut and feed, and the label media loaded. |
+| Printer profile (`ESCPOSProfile`, `ZPLProfile`) | What the hardware can do: resolution, printable widths, maximum sizes, cutter, codes. |
+| Driver (`ESCPOSDriver`, `ZPLDriver`) | How a laid-out document becomes the protocol's commands. |
+
+Cutting and feeding are things done to the printer, not part of the content, so they are job
+options, not layout properties. Options are grouped by layout, and a driver reads only the group
+for what it prints: a ZPL driver never sees the receipt cut. A profile says what a printer model
+*can* do — it does not know what paper or labels are loaded, so the job says that.
 
 ## A receipt
 
@@ -80,30 +117,32 @@ struct OrderLine {
     let price: String
 }
 
-struct OrderReceipt: PrintContent {
+struct OrderReceipt: PrintDocument {
     let number: Int
     let lines: [OrderLine]
     let total: String
 
-    var body: some PrintContent {
-        VStack(spacing: .lines(1)) {
-            Text("#\(number)").bold().size(.double).alignment(.center)
-            Divider()
-            ForEach(lines) { line in
-                HStack {
-                    Text("\(line.quantity)×")
-                    Text(line.name)
-                    Spacer()
-                    Text(line.price)
+    var body: some PrintLayout {
+        ReceiptLayout {
+            VStack(spacing: .lines(1)) {
+                Text("#\(number)").bold().size(.double).alignment(.center)
+                Divider()
+                ForEach(lines) { line in
+                    HStack {
+                        Text("\(line.quantity)×")
+                        Text(line.name)
+                        Spacer()
+                        Text(line.price)
+                    }
                 }
+                Divider()
+                HStack {
+                    Text("Total").bold()
+                    Spacer()
+                    Text(total).bold()
+                }
+                QRCode("https://example.com/orders/\(number)").alignment(.center)
             }
-            Divider()
-            HStack {
-                Text("Total").bold()
-                Spacer()
-                Text(total).bold()
-            }
-            QRCode("https://example.com/orders/\(number)").alignment(.center)
         }
     }
 }
@@ -119,7 +158,7 @@ let receipt = OrderReceipt(
 
 let printer = Printer(
     driver: .escpos(profile: .epsonTM),
-    options: PrintOptions(paperWidth: .millimeters80, cut: .partial)
+    options: PrintOptions(receipt: ReceiptOptions(paperWidth: .millimeters80, cut: .partial, feedLines: 3))
 )
 let rendered = try printer.render(receipt)
 // rendered.bytes: ESC/POS. rendered.degradations: anything printed differently.
@@ -132,17 +171,33 @@ on the first line. On a receipt, `VStack` spacing is whole lines: give it `.line
 The ESC/POS profiles are swift-escpos's: `.epsonTM`, `.duraposDPT201` and `.generic`, or one you
 build with `ESCPOSProfile(…)`.
 
+### The same receipt on other paper
+
+The paper is the job's, so one document serves every printer and roll:
+
+```swift
+let kitchen = Printer(
+    driver: .escpos(profile: .duraposDPT201),
+    options: PrintOptions(receipt: ReceiptOptions(paperWidth: .millimeters58, cut: nil, feedLines: 4))
+)
+let ticket = try kitchen.render(receipt) // wrapped at the 58 mm roll's printable width
+```
+
+A paper width the profile has no printable width for is refused with
+`.paperWidthUnsupported(_:)`. A cut the printer lacks is replaced by the feed and reported as
+`.cutUnavailable(_:)`.
+
 ## A label
 
 ```swift
 import SwiftPrint
 import SwiftPrintZPL
 
-struct ProductLabel: PrintContent {
+struct ProductLabel: PrintDocument {
     let number: String
     let batch: String
 
-    var body: some PrintContent {
+    var body: some PrintLayout {
         LabelLayout(width: .millimeters(100), height: .millimeters(50)) {
             VStack(alignment: .leading, spacing: .millimeters(0.5)) {
                 Text("Product \(number)").size(.double)
@@ -155,7 +210,10 @@ struct ProductLabel: PrintContent {
     }
 }
 
-let printer = Printer(driver: .zpl(profile: .zebraZD420d203))
+let printer = Printer(
+    driver: .zpl(profile: .zebraZD420d203),
+    options: PrintOptions(label: LabelOptions(media: LabelMedia(width: .millimeters(100), height: .millimeters(50))))
+)
 let rendered = try printer.render(ProductLabel(number: "1042", batch: "A-2026"))
 // rendered.bytes: ^XA^CI28^PW800^LL400^FO8,8^A0N,60,60^FB784,1,0,L,0^FDProduct 1042^FS…^XZ
 ```
@@ -166,10 +224,16 @@ resolution from its `ZPLProfile`, so the same label prints at the same size at 2
 On a label, `Spacer`s in a `VStack` share the height left over, and an `HStack` can hold any
 content, such as a QR code next to its text.
 
+The label's size is the size it was designed for; `LabelOptions.media` is the stock you say is
+loaded, or `nil` when you do not know it. Before any content is placed, the size must be a size
+(`.invalidDimension`), at most what the profile prints (`.exceedsPrinter`) and at most the media
+(`.exceedsMedia`). Continuous media has no length: give `height: nil`. SwiftPrint never asks the
+printer what is loaded.
+
 `ZPLDriver` builds a `ZPLLabel` from `ZPLCommand`s and encodes it with `ZPLEncoder`, which checks
-every command against the profile. A label wider than the printhead, content taller than the
-label, a QR code on a profile without them or data a barcode cannot hold throws a `PrintError` —
-nothing is left out silently. Media setup, such as `^MN` or `~SD`, goes in the driver's `setup`.
+every command against the profile. Content taller than the label, a QR code on a profile without
+them or data a barcode cannot hold throws a `PrintError` — nothing is left out silently. ZPL-only
+setup, such as `^MN` or `~SD`, goes in the driver's `setup`.
 
 ## Sending the bytes
 
@@ -240,6 +304,19 @@ elements and frames:
 let preview = Printer(driver: PlainTextReceiptDriver())
 print(String(decoding: try preview.render(receipt).bytes, as: UTF8.self))
 ```
+
+## Breaking changes
+
+SwiftPrint is still in development, and its API changes without compatibility shims:
+
+- Content no longer prints as a receipt by default. Declare a `PrintDocument` whose body is a
+  `ReceiptLayout` or `LabelLayout`; `Printer` takes documents, not content.
+- The resolved model in `SwiftPrintCore` is `ResolvedDocument`; the layout engines take its
+  content.
+- `PrintOptions` groups its options by layout: `PrintOptions(receipt: ReceiptOptions(paperWidth:
+  cut: feedLines:), label: LabelOptions(media:))`.
+- Size and layout failures are typed: `.layoutUnsupported`, `.paperWidthUnsupported`,
+  `.invalidDimension`, `.exceedsPrinter` and `.exceedsMedia`.
 
 ## Documentation
 

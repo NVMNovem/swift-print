@@ -18,7 +18,6 @@ indirect enum PrintNode: Hashable, Sendable {
     case row([PrintNode])
     case styled(StyleOverride, alignment: PrintAlignment?, [PrintNode])
     case padding(PrintInsets, [PrintNode])
-    case layout(PrintDocument.Format, [PrintNode])
 }
 
 /// A string and the style its own modifiers gave it.

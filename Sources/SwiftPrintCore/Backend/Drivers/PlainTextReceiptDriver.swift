@@ -15,7 +15,7 @@ public struct PlainTextReceiptDriver: ReceiptDriver {
     }
 
     public func metrics(for options: PrintOptions) throws(PrintError) -> any TextMetrics {
-        Metrics(lineWidth: options.paperWidth == .millimeters58 ? 32 : 48)
+        Metrics(lineWidth: options.receipt.paperWidth == .millimeters58 ? 32 : 48)
     }
 
     public func render(_ receipt: LaidOutReceipt, options: PrintOptions) throws(PrintError) -> RenderedDocument {

@@ -46,11 +46,21 @@ public struct PrintError: Error, Sendable, Hashable {
         case disconnected(Phase)
         /// The printer reported a problem, such as an open cover or no paper.
         case printerReportedProblem(PrinterStatus)
-        /// The driver or printer cannot do what was asked, such as a paper width, a QR code on a
-        /// label or reading status.
-        case unsupported(String)
-        /// The content does not fit the space it was given, such as a label, described.
+        /// The printer's driver does not print this layout, such as a label on a receipt printer.
+        case layoutUnsupported(PrintLayoutKind)
+        /// The printer has no printable width for the paper width in ``ReceiptOptions``.
+        case paperWidthUnsupported(ReceiptPaperWidth)
+        /// A label's declared dimension is not a size: zero, negative or not a finite number.
+        case invalidDimension(PrintDimension, PrintLength)
+        /// A label's dimension, in dots, is more than the printer prints.
+        case exceedsPrinter(PrintDimension, dots: Int, maximum: Int)
+        /// A label's dimension, in dots, is more than the media configured in ``LabelOptions``.
+        case exceedsMedia(PrintDimension, dots: Int, media: Int)
+        /// The content does not fit the space it was given within the document, described.
         case contentOverflow(String)
+        /// The driver or printer cannot do what was asked, such as a QR code on a label printer
+        /// without them, or reading status.
+        case unsupported(String)
         /// The driver could not turn the document into bytes, described.
         case renderingFailed(String)
     }
@@ -63,5 +73,52 @@ public struct PrintError: Error, Sendable, Hashable {
     public init(delivery: Delivery, reason: Reason) {
         self.delivery = delivery
         self.reason = reason
+    }
+}
+
+extension PrintError: CustomStringConvertible {
+    public var description: String {
+        let sent = switch delivery {
+        case .notSent: "Nothing was sent"
+        case .partiallySent(let confirmedBytes): "\(confirmedBytes) bytes may have been printed"
+        case .sent: "Everything was sent"
+        }
+        return "\(reason). \(sent)."
+    }
+}
+
+extension PrintError.Reason: CustomStringConvertible {
+    public var description: String {
+        switch self {
+        case .connectionRefused: "The printer refused the connection"
+        case .connectionFailed(let description): "The connection failed: \(description)"
+        case .timedOut(let phase): "Timed out while \(phase)"
+        case .cancelled(let phase): "Cancelled while \(phase)"
+        case .disconnected(let phase): "The printer disconnected while \(phase)"
+        case .printerReportedProblem(let status): "The printer reported a problem: \(status)"
+        case .layoutUnsupported(let kind):
+            "The printer's driver does not print \(kind == .receipt ? "a ReceiptLayout" : "a LabelLayout")"
+        case .paperWidthUnsupported(let width):
+            "The printer has no printable width for \(width.rawValue) mm paper, set in PrintOptions.receipt"
+        case .invalidDimension(let dimension, let length):
+            "The label's \(dimension) of \(length) is not a size"
+        case .exceedsPrinter(let dimension, let dots, let maximum):
+            "The label's \(dimension) is \(dots) dots; the printer prints at most \(maximum)"
+        case .exceedsMedia(let dimension, let dots, let media):
+            "The label's \(dimension) is \(dots) dots; the media set in PrintOptions.label is \(media)"
+        case .contentOverflow(let description): "The content does not fit: \(description)"
+        case .unsupported(let description): "Not supported: \(description)"
+        case .renderingFailed(let description): "Rendering failed: \(description)"
+        }
+    }
+}
+
+extension PrintError.Phase: CustomStringConvertible {
+    public var description: String {
+        switch self {
+        case .connecting: "connecting"
+        case .writing: "writing"
+        case .readingStatus: "reading status"
+        }
     }
 }

@@ -90,8 +90,8 @@ struct ESCPOSRenderer {
     }
 
     private mutating func finish() -> [ESCPOSCommand] {
-        let feedLines = UInt8(clamping: max(0, options.feedLines))
-        guard let cut = options.cut else {
+        let feedLines = UInt8(clamping: max(0, options.receipt.feedLines))
+        guard let cut = options.receipt.cut else {
             return feedLines > 0 ? [.feed(lines: feedLines)] : []
         }
         switch cut {

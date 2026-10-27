@@ -5,16 +5,17 @@
 //  Created by Damian Van de Kauter on 27/10/2026.
 //
 
-/// Content printed as a label of a fixed size.
+/// A label: content placed on a canvas of a fixed size.
 ///
-/// The content is placed one piece under the other within the label, as in a ``VStack``, and must
-/// fit: content that is too tall or too wide is refused with
-/// ``PrintError/Reason/contentOverflow(_:)`` rather than cut off. Lengths are converted to the
-/// printer's dots with its resolution, so the same label prints at the same size at 203 and 300 dpi.
+/// The width and height are the size the label was designed for. Layout converts them to the
+/// printer's dots with its resolution, so the same label prints at the same size at 203 and
+/// 300 dpi, and places the content one piece under the other, as in a ``VStack``, within them.
 ///
-/// A layout decides the format only as the outermost content; inside other content it adds its
-/// content and nothing else.
-public struct LabelLayout: PrintContent {
+/// Nothing is clipped, scaled or substituted. A size that is not a size, or that is larger than the
+/// printer prints or than the media configured in ``LabelOptions``, is refused before any content
+/// is placed; content that does not fit the size is refused with
+/// ``PrintError/Reason/contentOverflow(_:)``.
+public struct LabelLayout: PrintLayout {
     let size: LabelSize
     let children: [PrintNode]
 
@@ -28,11 +29,7 @@ public struct LabelLayout: PrintContent {
         self.children = content()._printNodes().nodes
     }
 
-    public var body: Never {
-        return fatalError("LabelLayout has no body.")
-    }
-
-    public func _printNodes() -> _PrintNodes {
-        _PrintNodes([.layout(.label(size), children)])
+    public func _resolved() -> ResolvedDocument {
+        ResolvedDocument(format: .label(size), nodes: children)
     }
 }

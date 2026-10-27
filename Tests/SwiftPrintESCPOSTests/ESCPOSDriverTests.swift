@@ -12,11 +12,15 @@ import SwiftPrint
 
 @Suite("ESC/POS driver")
 struct ESCPOSDriverTests {
-    private func printer(_ profile: ESCPOSProfile, paper: ReceiptPaperWidth = .millimeters80) -> Printer {
-        Printer(driver: .escpos(profile: profile), options: PrintOptions(paperWidth: paper))
+    private func printer(
+        _ profile: ESCPOSProfile,
+        paper: ReceiptPaperWidth = .millimeters80,
+        cut: ReceiptCut? = .partial
+    ) -> Printer {
+        Printer(driver: .escpos(profile: profile), options: PrintOptions(receipt: ReceiptOptions(paperWidth: paper, cut: cut)))
     }
 
-    private let receipt = VStack {
+    private let receipt = ReceiptLayout {
         Text("FrietHeus").bold().alignment(.center)
         HStack { Text("Totaal"); Spacer(); Text("€ 6,40") }
     }
@@ -39,7 +43,7 @@ struct ESCPOSDriverTests {
 
     @Test("A profile with a euro code page selects it and prints € as one byte")
     func euroCodePage() throws {
-        let rendered = try printer(.epsonTM).render(Text("€ 6,40"))
+        let rendered = try printer(.epsonTM).render(ReceiptLayout { Text("€ 6,40") })
         #expect(Array(rendered.bytes.prefix(5)) == [0x1B, 0x40, 0x1B, 0x74, 19])
         #expect(Array(rendered.bytes.dropFirst(5).prefix(6)) == [0xD5, 0x20, 0x36, 0x2C, 0x34, 0x30])
         #expect(rendered.degradations.isEmpty)
@@ -54,39 +58,65 @@ struct ESCPOSDriverTests {
 
     @Test("A QR code is drawn on a profile that has them and reported where it does not")
     func qrCode() throws {
-        let epson = try printer(.epsonTM).render(QRCode("AB", moduleSize: 4))
+        let epson = try printer(.epsonTM).render(ReceiptLayout { QRCode("AB", moduleSize: 4) })
         #expect(epson.bytes.contains(0x6B))
         #expect(epson.degradations.isEmpty)
-        let generic = try printer(.generic).render(QRCode("AB"))
+        let generic = try printer(.generic).render(ReceiptLayout { QRCode("AB") })
         #expect(generic.degradations == [.qrCodeOmitted])
     }
 
     @Test("A raster image is sent as GS v 0 where the profile has images")
     func image() throws {
         let image = PrintImage(width: 8, height: 1, pixels: [0, 255, 0, 255, 0, 255, 0, 255])!
-        let rendered = try printer(.epsonTM).render(Image(image))
+        let rendered = try printer(.epsonTM).render(ReceiptLayout { Image(image) })
         #expect(rendered.bytes.contains(0x76))
         #expect(rendered.degradations.isEmpty)
     }
 
     @Test("Barcodes, which swift-escpos does not draw, are left off and reported")
     func barcode() throws {
-        let rendered = try printer(.epsonTM).render(Barcode("1042"))
+        let rendered = try printer(.epsonTM).render(ReceiptLayout { Barcode("1042") })
         #expect(rendered.degradations == [.barcodeOmitted])
     }
 
     @Test("A label is refused by a receipt printer")
     func label() {
-        #expect(throws: PrintError(delivery: .notSent, reason: .unsupported("labels, with this driver"))) {
+        #expect(throws: PrintError(delivery: .notSent, reason: .layoutUnsupported(.label))) {
             try printer(.epsonTM).render(LabelLayout(width: .millimeters(50), height: .millimeters(30)) { Text("x") })
         }
     }
 
     @Test("A paper width the profile lacks is refused before anything is rendered")
     func paperWidth() {
-        #expect(throws: PrintError(delivery: .notSent, reason: .unsupported("58 mm paper on Epson TM series"))) {
+        #expect(throws: PrintError(delivery: .notSent, reason: .paperWidthUnsupported(.millimeters58))) {
             try printer(.epsonTM, paper: .millimeters58).render(receipt)
         }
+    }
+
+    @Test("The same receipt prints at the width of each paper and profile")
+    func reuse() throws {
+        let at80 = try printer(.generic).render(receipt).bytes
+        let at58 = try printer(.generic, paper: .millimeters58).render(receipt).bytes
+        // 48 columns on 80 mm paper, 32 on 58 mm: the title is centred and the price held right.
+        #expect(Array(at80[2..<21]) == [UInt8](repeating: 0x20, count: 19))
+        #expect(Array(at58[2..<13]) == [UInt8](repeating: 0x20, count: 11))
+        #expect(at58.count == at80.count - 8 - 16)
+        #expect(try printer(.duraposDPT201, paper: .millimeters58).render(receipt).bytes == at58)
+    }
+
+    @Test("The cut and feed come from the job's options; a cut the profile lacks is reported")
+    func cutAndFeed() throws {
+        let uncut = try printer(.epsonTM, cut: nil).render(receipt).bytes
+        #expect(Array(uncut.suffix(3)) == [0x1B, 0x64, 0x03])
+        let full = try printer(.epsonTM, cut: .full).render(receipt).bytes
+        #expect(Array(full.suffix(6)) == [0x1B, 0x64, 0x03, 0x1D, 0x56, 0x00])
+        let custom = ESCPOSProfile(
+            id: "no-cutter", name: "No cutter", capabilities: [],
+            printableDots: [.millimeters80: 576], cellWidths: [.a: 12], codePages: [.pc437: 0], defaultCodePage: .pc437
+        )
+        let fed = try printer(custom).render(receipt)
+        #expect(Array(fed.bytes.suffix(3)) == [0x1B, 0x64, 0x03])
+        #expect(fed.degradations.contains(.cutUnavailable(.partial)))
     }
 
     @Test("A printer's status maps, paper end and every error flag included")

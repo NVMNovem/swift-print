@@ -17,8 +17,9 @@ public protocol PrintDriver: Sendable {
 
 /// A driver that prints receipts: text in lines of character cells, as long as the content needs.
 public protocol ReceiptDriver: PrintDriver {
-    /// How wide text prints with these options. Throws when the printer cannot take them, such as a
-    /// paper width it lacks.
+    /// How wide text prints with these options: the printable width of ``ReceiptOptions/paperWidth``
+    /// on this printer. Throws ``PrintError/Reason/paperWidthUnsupported(_:)`` for a paper width the
+    /// printer lacks. Reads only ``PrintOptions/receipt``.
     func metrics(for options: PrintOptions) throws(PrintError) -> any TextMetrics
     /// The bytes for a laid-out receipt, with anything printed differently.
     func render(_ receipt: LaidOutReceipt, options: PrintOptions) throws(PrintError) -> RenderedDocument
@@ -26,7 +27,8 @@ public protocol ReceiptDriver: PrintDriver {
 
 /// A driver that prints labels: content at positions on a label of a fixed size.
 public protocol LabelDriver: PrintDriver {
-    /// How the printer measures a label with these options.
+    /// How the printer measures a label, and the most it prints. Layout checks a label against these
+    /// limits and against the media configured in ``PrintOptions/label``.
     func labelMetrics(for options: PrintOptions) throws(PrintError) -> any LabelMetrics
     /// The bytes for a laid-out label. Throws when the printer cannot print it as laid out; a label
     /// is never printed differently from how it was written.

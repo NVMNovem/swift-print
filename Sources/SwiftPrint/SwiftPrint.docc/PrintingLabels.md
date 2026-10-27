@@ -4,7 +4,8 @@ Lay content out on a label of a fixed size.
 
 ## Overview
 
-A ``LabelLayout`` gives content an explicit width and height. Unlike a receipt, which grows as
+A ``LabelLayout`` is the root layout of a label document: it gives content an explicit width and
+height, the size the label was designed for. Unlike a receipt, which grows as
 long as its content, a label is a bounded box: everything in it is measured and positioned, and
 content that does not fit is refused rather than cut off.
 
@@ -12,11 +13,11 @@ content that does not fit is refused rather than cut off.
 import SwiftPrint
 import SwiftPrintZPL
 
-struct ProductLabel: PrintContent {
+struct ProductLabel: PrintDocument {
     let number: String
     let batch: String
 
-    var body: some PrintContent {
+    var body: some PrintLayout {
         LabelLayout(width: .millimeters(100), height: .millimeters(50)) {
             VStack(alignment: .leading, spacing: .millimeters(0.5)) {
                 Text("Product \(number)").size(.double)
@@ -33,9 +34,25 @@ struct ProductLabel: PrintContent {
     }
 }
 
-let printer = Printer(driver: .zpl(profile: .zebraZD420d203))
+let printer = Printer(
+    driver: .zpl(profile: .zebraZD420d203),
+    options: PrintOptions(label: LabelOptions(media: LabelMedia(width: .millimeters(100), height: .millimeters(50))))
+)
 let rendered = try printer.render(ProductLabel(number: "1042", batch: "A-2026"))
 ```
+
+### Document size and media
+
+The layout's size is the document's: what the label was designed for. The label stock in the
+printer is the job's, configured with `LabelOptions/media` — `nil` when you do not know it, and a
+`nil` height for continuous media. SwiftPrint never asks the printer what is loaded. Before any
+content is placed, layout checks the size against both:
+
+- `.invalidDimension(_:_:)` when a dimension is zero, negative or not finite;
+- `.exceedsPrinter(_:dots:maximum:)` when it is more than the printer's profile prints;
+- `.exceedsMedia(_:dots:media:)` when it is more than the configured media.
+
+Labels are never clipped, scaled or printed on a different size.
 
 ### Lengths
 
@@ -65,8 +82,8 @@ It throws a `PrintError` instead:
 
 - `.contentOverflow(_:)` when content is taller than the label, or a code or a row of columns is
   wider than its space;
-- `.unsupported(_:)` when the label is larger than the printer takes, or content needs something
-  the printer lacks, such as QR codes, images or underlined text.
+- `.unsupported(_:)` when content needs something the printer lacks, such as QR codes, images or
+  underlined text.
 
 The driver's encoder may refuse too — a character the label's character set cannot hold, or data
 a barcode cannot encode — with `.renderingFailed(_:)`.

@@ -10,11 +10,11 @@ import Testing
 import SwiftPrint
 @testable import SwiftPrintZPL
 
-private struct ProductLabel: PrintContent {
+private struct ProductLabel: PrintDocument {
     let number: String
     let batch: String
 
-    var body: some PrintContent {
+    var body: some PrintLayout {
         LabelLayout(width: .millimeters(100), height: .millimeters(50)) {
             VStack(alignment: .leading, spacing: 4) {
                 Text("Product \(number)").size(.double)
@@ -33,8 +33,8 @@ struct ZPLDriverTests {
         Printer(driver: .zpl(profile: profile))
     }
 
-    private func zpl(_ content: some PrintContent, on printer: Printer) throws(PrintError) -> String {
-        String(decoding: try printer.render(content).bytes, as: UTF8.self)
+    private func zpl(_ document: some PrintDocument, on printer: Printer) throws(PrintError) -> String {
+        String(decoding: try printer.render(document).bytes, as: UTF8.self)
     }
 
     private func small<Content: PrintContent>(@PrintBuilder _ content: () -> Content) -> LabelLayout {
@@ -77,7 +77,7 @@ struct ZPLDriverTests {
     func labelModel() throws {
         let driver = ZPLDriver(profile: .zebraZD420d203, setup: [.mediaTracking(.gap)], quantity: 2)
         let printer = Printer(driver: driver)
-        guard case .label(let laidOut) = try printer.layout(PrintDocument(small { Text("Hi") })) else {
+        guard case .label(let laidOut) = try printer.layout(small { Text("Hi") }) else {
             Issue.record("Not a label.")
             return
         }
@@ -122,7 +122,7 @@ struct ZPLDriverTests {
 
     @Test("A label wider than the printhead is refused")
     func tooWide() {
-        #expect(throws: PrintError(delivery: .notSent, reason: .unsupported("a label 880 dots wide; the printer prints at most 832"))) {
+        #expect(throws: PrintError(delivery: .notSent, reason: .exceedsPrinter(.width, dots: 880, maximum: 832))) {
             try printer().render(LabelLayout(width: .millimeters(110), height: .millimeters(50)) { Text("x") })
         }
     }
@@ -146,9 +146,25 @@ struct ZPLDriverTests {
 
     @Test("A receipt is refused by a label printer")
     func receipt() {
-        #expect(throws: PrintError(delivery: .notSent, reason: .unsupported("receipts, with this driver"))) {
-            try printer().render(Text("x"))
+        #expect(throws: PrintError(delivery: .notSent, reason: .layoutUnsupported(.receipt))) {
+            try printer().render(ReceiptLayout { Text("x") })
         }
+    }
+
+    @Test("A label larger than the media configured for the job is refused")
+    func media() throws {
+        let options = PrintOptions(label: LabelOptions(media: LabelMedia(width: .millimeters(100), height: .millimeters(40))))
+        let printer = Printer(driver: .zpl(profile: .zebraZD420d203), options: options)
+        #expect(throws: PrintError(delivery: .notSent, reason: .exceedsMedia(.height, dots: 400, media: 320))) {
+            try printer.render(ProductLabel(number: "1042", batch: "A-2026"))
+        }
+    }
+
+    @Test("Receipt options, such as a cut, never reach a label")
+    func receiptOptions() throws {
+        let options = PrintOptions(receipt: ReceiptOptions(paperWidth: .millimeters58, cut: .full, feedLines: 9))
+        let label = ProductLabel(number: "1042", batch: "A-2026")
+        #expect(try Printer(driver: .zpl(profile: .zebraZD420d203), options: options).render(label) == printer().render(label))
     }
 
     @Test("Capabilities follow the profile")

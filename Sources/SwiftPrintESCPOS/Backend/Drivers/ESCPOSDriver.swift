@@ -34,12 +34,10 @@ public struct ESCPOSDriver: ReceiptDriver {
     }
 
     public func metrics(for options: PrintOptions) throws(PrintError) -> any TextMetrics {
-        guard let paperWidth = ESCPOSPaperWidth(rawValue: options.paperWidth.rawValue),
+        let requested = options.receipt.paperWidth
+        guard let paperWidth = ESCPOSPaperWidth(rawValue: requested.rawValue),
               let lineWidth = profile.printableDots[paperWidth] else {
-            throw PrintError(
-                delivery: .notSent,
-                reason: .unsupported("\(options.paperWidth.rawValue) mm paper on \(profile.name)")
-            )
+            throw PrintError(delivery: .notSent, reason: .paperWidthUnsupported(requested))
         }
         return ESCPOSMetrics(profile: profile, lineWidth: lineWidth, codePage: codePage)
     }

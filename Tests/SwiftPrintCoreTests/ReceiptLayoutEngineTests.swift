@@ -158,7 +158,7 @@ struct ReceiptLayoutEngineTests {
 
     private func layout(_ elements: [PrintElement], capabilities: PrintCapabilities = [.qrCodes, .barcodes]) -> LaidOutReceipt {
         ReceiptLayoutEngine(metrics: ColumnMetrics(lineWidth: 16), capabilities: capabilities)
-            .layout(PrintDocument(content: elements))
+            .layout(elements)
     }
 
     @Test("A vertical stack is its children with blank lines between those that print")
@@ -207,12 +207,4 @@ struct ReceiptLayoutEngineTests {
         #expect(omitted.degradations == [.barcodeOmitted])
     }
 
-    @Test("A label's content is placed as a receipt when a receipt layout is asked")
-    func labelAsReceipt() {
-        let document = PrintDocument(
-            format: .label(LabelSize(width: .millimeters(50), height: .millimeters(30))),
-            content: [.text([StyledRun("x")], alignment: .leading)]
-        )
-        #expect(ReceiptLayoutEngine(metrics: ColumnMetrics(lineWidth: 4), capabilities: []).layout(document).plainText == "x")
-    }
 }

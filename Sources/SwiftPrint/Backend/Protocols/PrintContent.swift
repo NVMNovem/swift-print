@@ -7,10 +7,10 @@
 
 /// A piece of printed content, declared like a SwiftUI view.
 ///
-/// A conforming type describes its content in ``body``; the framework turns it into a
-/// ``PrintDocument`` immediately and keeps nothing else. There is no state, no environment and no
-/// identity: a receipt or a label is a function of its input, so the same input always prints the
-/// same bytes. Content placed in a ``LabelLayout`` prints as a label; any other content as a receipt.
+/// A conforming type describes its content in ``body``. Content is printed inside the root layout of
+/// a ``PrintDocument``, which the framework resolves immediately, keeping nothing else. There is no
+/// state, no environment and no identity: a receipt or a label is a function of its input, so the
+/// same input always prints the same bytes.
 public protocol PrintContent {
     /// The type of content this content is made of.
     associatedtype Body: PrintContent

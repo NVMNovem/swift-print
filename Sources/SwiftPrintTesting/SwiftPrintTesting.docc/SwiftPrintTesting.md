@@ -21,7 +21,7 @@ import Testing
     let printer = Printer(driver: MockDriver(), transport: transport)
 
     await #expect(throws: PrintError.self) {
-        try await printer.print(Text("Order #42"))
+        try await printer.print(ReceiptLayout { Text("Order #42") })
     }
     #expect(await transport.journal.sent.count == 1)
 }

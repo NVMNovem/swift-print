@@ -22,36 +22,57 @@ public struct LabelLayoutEngine: Sendable {
     public let metrics: any LabelMetrics
     /// What the printer can do; anything else is refused.
     public let capabilities: PrintCapabilities
+    /// The label stock configured for the printer, or `nil` when it is not known.
+    public let media: LabelMedia?
 
-    public init(metrics: any LabelMetrics, capabilities: PrintCapabilities) {
+    public init(metrics: any LabelMetrics, capabilities: PrintCapabilities, media: LabelMedia? = nil) {
         self.metrics = metrics
         self.capabilities = capabilities
+        self.media = media
     }
 
-    /// The document's label, or an error when it is not a label or does not fit.
-    public func layout(_ document: PrintDocument) throws(PrintError) -> LaidOutLabel {
-        guard case .label(let size) = document.format else {
-            throw Self.unsupported("a receipt, with the label layout")
-        }
-        return try layout(document.content, size: size)
-    }
-
-    /// The content placed on a label of this size, or an error when it does not fit.
+    /// The content placed on a label of this size, or an error when the size does not suit the
+    /// printer or its media, or the content does not fit.
+    ///
+    /// The size is checked before any content is placed: it must be a size, at most what the
+    /// printer prints and, when ``media`` is known, at most the media's.
     public func layout(_ content: [PrintElement], size: LabelSize) throws(PrintError) -> LaidOutLabel {
         let context = try Context(metrics: metrics, capabilities: capabilities)
-        let width = try context.dots(size.width, "the label width")
-        let height = try context.dots(size.height, "the label height")
-        guard width > 0, height > 0 else {
-            throw Self.unsupported("a label of \(width)×\(height) dots")
-        }
-        guard width <= metrics.maximumWidth else {
-            throw Self.unsupported("a label \(width) dots wide; the printer prints at most \(metrics.maximumWidth)")
-        }
-        guard height <= metrics.maximumHeight else {
-            throw Self.unsupported("a label \(height) dots long; the printer takes at most \(metrics.maximumHeight)")
-        }
+        let width = try checked(size.width, .width, maximum: metrics.maximumWidth, context: context)
+        let height = try checked(size.height, .height, maximum: metrics.maximumHeight, context: context)
         let placed = try context.place(.verticalStack(content, spacing: .zero), width: width, height: height)
         return LaidOutLabel(width: width, height: height, elements: placed.elements)
+    }
+
+    /// One dimension of the label in dots, once it is known to be a size the printer and the media
+    /// take.
+    private func checked(
+        _ length: PrintLength,
+        _ dimension: PrintDimension,
+        maximum: Int,
+        context: Context
+    ) throws(PrintError) -> Int {
+        guard case let dots? = length.dots(dotsPerMillimeter: metrics.dotsPerMillimeter, lineHeight: context.lineHeight),
+              dots > 0 else {
+            throw PrintError(delivery: .notSent, reason: .invalidDimension(dimension, length))
+        }
+        guard dots <= maximum else {
+            throw PrintError(delivery: .notSent, reason: .exceedsPrinter(dimension, dots: dots, maximum: maximum))
+        }
+        let mediaLength = switch dimension {
+        case .width: media?.width
+        case .height: media?.height
+        }
+        if let mediaLength {
+            guard case let mediaDots? = mediaLength.dots(dotsPerMillimeter: metrics.dotsPerMillimeter, lineHeight: context.lineHeight),
+                  mediaDots > 0 else {
+                throw Self.unsupported("label media with a \(dimension) of \(mediaLength)")
+            }
+            guard dots <= mediaDots else {
+                throw PrintError(delivery: .notSent, reason: .exceedsMedia(dimension, dots: dots, media: mediaDots))
+            }
+        }
+        return dots
     }
 
     static func unsupported(_ description: String) -> PrintError {

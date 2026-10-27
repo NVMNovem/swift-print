@@ -10,16 +10,18 @@ layouts and drivers without the declarative content. It has no dependencies and 
 
 A document passes through three stages here:
 
-1. A ``PrintDocument`` says what is printed — ``PrintElement``s, with every style and alignment
-   resolved — and its ``PrintDocument/Format``: a receipt, or a label of a ``LabelSize``. It never
-   contains a cut, a drawer kick or a beep: those are chosen with ``PrintOptions``.
+1. A ``ResolvedDocument`` says what is printed — ``PrintElement``s, with every style and
+   alignment resolved — and its ``ResolvedDocument/Format``: the receipt or label layout the
+   document declared. It never contains a cut, a feed or a beep: those are the job's, chosen with
+   ``PrintOptions``.
 2. A layout places it for one printer, measured through that printer's metrics:
    - ``ReceiptLayoutEngine`` lays a receipt out line by line at the paper's width through
      ``TextMetrics``, degrading what the printer's ``PrintCapabilities`` lack and reporting each
      ``PrintDegradation``. The result is a ``LaidOutReceipt``.
-   - ``LabelLayoutEngine`` positions a label's elements in dots within its size through
-     ``LabelMetrics``, and throws a ``PrintError`` for content that does not fit or that the
-     printer cannot print. The result is a ``LaidOutLabel``.
+   - ``LabelLayoutEngine`` checks a label's size against the printer and the configured
+     ``LabelMedia``, positions its elements in dots through ``LabelMetrics``, and throws a
+     ``PrintError`` for a size or content that does not fit, or that the printer cannot print. The
+     result is a ``LaidOutLabel``.
 3. A ``ReceiptDriver`` or ``LabelDriver`` renders the laid-out document to a ``RenderedDocument`` —
    the bytes for its protocol.
 
@@ -30,9 +32,11 @@ output. Sending the bytes is left to the application, optionally behind a ``Prin
 
 ### Documents
 
-- ``PrintDocument``
+- ``ResolvedDocument``
+- ``PrintLayoutKind``
 - ``PrintElement``
 - ``LabelSize``
+- ``PrintDimension``
 - ``StyledRun``
 - ``TextStyle``
 - ``TextSize``
@@ -79,6 +83,9 @@ output. Sending the bytes is left to the application, optionally behind a ``Prin
 
 - ``PrintTransport``
 - ``PrintOptions``
+- ``ReceiptOptions``
+- ``LabelOptions``
+- ``LabelMedia``
 - ``ReceiptPaperWidth``
 - ``ReceiptCut``
 - ``PrintOutcome``

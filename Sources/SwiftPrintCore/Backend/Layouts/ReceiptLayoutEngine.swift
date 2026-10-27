@@ -27,11 +27,10 @@ public struct ReceiptLayoutEngine: Sendable {
         self.capabilities = capabilities
     }
 
-    /// The document's lines on this paper, and everything printed differently. A label's content is
-    /// placed as a receipt; its size is not used.
-    public func layout(_ document: PrintDocument) -> LaidOutReceipt {
+    /// The content's lines on this paper, and everything printed differently.
+    public func layout(_ content: [PrintElement]) -> LaidOutReceipt {
         var context = Context(metrics: metrics, capabilities: capabilities)
-        for block in context.blocks(document.content) {
+        for block in context.blocks(content) {
             context.place(block)
         }
         return LaidOutReceipt(lines: context.lines, degradations: context.degradations)

@@ -5,23 +5,22 @@
 //  Created by Damian Van de Kauter on 27/10/2026.
 //
 
-/// Content printed as a receipt: line after line at the paper's width, as long as it needs.
+/// A receipt: content placed line after line, as long as it needs.
 ///
-/// Content outside any layout already prints as a receipt; this says so explicitly. A layout
-/// decides the format only as the outermost content.
-public struct ReceiptLayout: PrintContent {
+/// The layout describes how content flows — wrapping, alignment, spacing — and nothing about the
+/// paper. The width it wraps at is the printable width of ``ReceiptOptions/paperWidth`` on the
+/// printer it is printed on, so the same receipt prints on 58 mm and 80 mm paper unchanged. Its
+/// height is however long the content is. Cutting and feeding are the print job's, in
+/// ``ReceiptOptions``.
+public struct ReceiptLayout: PrintLayout {
     let children: [PrintNode]
 
-    /// The content as a receipt.
+    /// The content as a receipt, one piece under the other.
     public init<Content: PrintContent>(@PrintBuilder content: () -> Content) {
         self.children = content()._printNodes().nodes
     }
 
-    public var body: Never {
-        return fatalError("ReceiptLayout has no body.")
-    }
-
-    public func _printNodes() -> _PrintNodes {
-        _PrintNodes([.layout(.receipt, children)])
+    public func _resolved() -> ResolvedDocument {
+        ResolvedDocument(format: .receipt, nodes: children)
     }
 }

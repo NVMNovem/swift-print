@@ -67,11 +67,42 @@ struct LabelLayoutEngineTests {
 
     @Test("A label wider than the printhead or longer than the printer takes is refused")
     func printerLimits() {
-        #expect(throws: PrintError(delivery: .notSent, reason: .unsupported("a label 840 dots wide; the printer prints at most 832"))) {
+        #expect(throws: PrintError(delivery: .notSent, reason: .exceedsPrinter(.width, dots: 840, maximum: 832))) {
             try layout([], width: .millimeters(105), height: .millimeters(50))
         }
-        #expect(throws: PrintError(delivery: .notSent, reason: .unsupported("a label 2400 dots long; the printer takes at most 2000"))) {
+        #expect(throws: PrintError(delivery: .notSent, reason: .exceedsPrinter(.height, dots: 2400, maximum: 2000))) {
             try layout([], width: .millimeters(50), height: .millimeters(300))
+        }
+    }
+
+    @Test("A dimension that is not a size is refused")
+    func invalidDimensions() {
+        #expect(throws: PrintError(delivery: .notSent, reason: .invalidDimension(.width, .dots(0)))) {
+            try layout([], width: .dots(0), height: .millimeters(50))
+        }
+        #expect(throws: PrintError(delivery: .notSent, reason: .invalidDimension(.height, .millimeters(-5)))) {
+            try layout([], width: .millimeters(50), height: .millimeters(-5))
+        }
+        #expect(throws: PrintError(delivery: .notSent, reason: .invalidDimension(.width, .inches(.infinity)))) {
+            try layout([], width: .inches(.infinity), height: .millimeters(50))
+        }
+    }
+
+    @Test("A label larger than the configured media is refused before any content is placed")
+    func media() throws {
+        let engine = { (media: LabelMedia) in
+            LabelLayoutEngine(metrics: GridMetrics(), capabilities: Self.all, media: media)
+        }
+        let size = LabelSize(width: .millimeters(100), height: .millimeters(50))
+        let tooTall: [PrintElement] = [.feed(lines: 100)]
+
+        _ = try engine(LabelMedia(width: .millimeters(100), height: .millimeters(50))).layout([], size: size)
+        _ = try engine(LabelMedia(width: .millimeters(102), height: nil)).layout([], size: size)
+        #expect(throws: PrintError(delivery: .notSent, reason: .exceedsMedia(.width, dots: 800, media: 784))) {
+            try engine(LabelMedia(width: .millimeters(98), height: nil)).layout(tooTall, size: size)
+        }
+        #expect(throws: PrintError(delivery: .notSent, reason: .exceedsMedia(.height, dots: 400, media: 320))) {
+            try engine(LabelMedia(width: .millimeters(100), height: .millimeters(40))).layout(tooTall, size: size)
         }
     }
 
@@ -252,12 +283,6 @@ struct LabelLayoutEngineTests {
         }
     }
 
-    @Test("A receipt document is refused by the label layout")
-    func receiptDocument() {
-        #expect(throws: PrintError(delivery: .notSent, reason: .unsupported("a receipt, with the label layout"))) {
-            try LabelLayoutEngine(metrics: GridMetrics(), capabilities: []).layout(PrintDocument(content: []))
-        }
-    }
 }
 
 @Suite("Measurement")

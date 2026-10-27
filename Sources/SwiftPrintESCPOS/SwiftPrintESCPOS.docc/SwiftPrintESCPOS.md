@@ -6,7 +6,7 @@ Render receipts for ESC/POS printers with swift-escpos.
 
 ``ESCPOSDriver`` turns a laid-out receipt into `ESCPOSCommand`s and encodes them with swift-escpos's
 `ESCPOSEncoder`, which checks every command against the printer's `ESCPOSProfile`. It is a
-`ReceiptDriver`: a label document is refused.
+`ReceiptDriver`: a `LabelLayout` document is refused with `.layoutUnsupported(.label)`.
 
 ```swift
 import SwiftPrint
@@ -14,7 +14,7 @@ import SwiftPrintESCPOS
 
 let printer = Printer(
     driver: .escpos(profile: .epsonTM),
-    options: PrintOptions(paperWidth: .millimeters80, cut: .partial)
+    options: PrintOptions(receipt: ReceiptOptions(paperWidth: .millimeters80, cut: .partial))
 )
 let rendered = try printer.render(receipt)
 ```
@@ -30,8 +30,11 @@ where there is one. A character the code page lacks is replaced and reported as
 Styles, images, QR codes and cuts the profile lacks are left off and reported. swift-escpos draws
 no barcodes, so a barcode is left off and reported as `PrintDegradation.barcodeOmitted`.
 
-A paper width the profile has no printable width for is refused with
-`PrintError.Reason.unsupported(_:)` before anything is rendered.
+The printable width comes from `ReceiptOptions.paperWidth` and the profile's printable dots for
+it, so one receipt serves every roll. A paper width the profile has no printable width for is
+refused with `PrintError.Reason.paperWidthUnsupported(_:)` before anything is rendered. The cut
+and feed come from `ReceiptOptions`; a cut the profile lacks is replaced by the feed and reported
+as `PrintDegradation.cutUnavailable(_:)`.
 
 ### Sending
 

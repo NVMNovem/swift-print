@@ -1,42 +1,54 @@
 # ``SwiftPrint``
 
-Declare receipts like SwiftUI views and print them on thermal receipt printers.
+Declare receipts and labels like SwiftUI views and render them for receipt and label printers.
 
 ## Overview
 
-SwiftPrint turns a receipt you declare in Swift into the bytes a printer understands. You
-describe what is on the receipt with ``ReceiptContent`` — text, rows of columns, dividers, images
-and QR codes — and hand it to a ``ReceiptPrinter``, which lays it out for the paper, renders it
-through a driver and sends it.
+SwiftPrint turns content you declare in Swift into the bytes a printer understands. You describe
+what is printed with ``PrintContent`` — text, stacks, dividers, images, QR codes and barcodes — and
+hand it to a ``Printer``, which lays it out with the layout its format names and renders it
+through a driver.
 
 ```swift
-struct OrderReceipt: ReceiptContent {
-    let number: Int
-    let total: String
+struct ProductLabel: PrintContent {
+    let number: String
 
-    var body: some ReceiptContent {
-        VStack(spacing: 1) {
-            Text("#\(number)").bold().size(.double).alignment(.center)
-            HStack { Text("Total"); Spacer(); Text(total) }
+    var body: some PrintContent {
+        LabelLayout(width: .millimeters(100), height: .millimeters(50)) {
+            VStack(alignment: .leading) {
+                Text("Product \(number)").size(.double)
+                Spacer()
+                Barcode(number)
+            }
+            .padding(.millimeters(1))
         }
     }
 }
 ```
 
-A receipt is a function of its input: there is no state, no environment and no identity, so the
-same content always prints the same bytes. What a printer cannot do is not sent; it is left off or
-printed differently, and reported as a `ReceiptDegradation`.
+Content in a ``LabelLayout`` prints as a label of that size; any other content, or content in a
+``ReceiptLayout``, as a receipt. The same components work in both, within what the printer can do.
 
-This module re-exports `SwiftPrintCore`, which holds the printer-independent model, the layout
-and the driver protocol.
+Content is a function of its input: there is no state, no environment and no identity, so the same
+content always prints the same bytes. On a receipt, what a printer cannot do is left off or printed
+differently, and reported as a `PrintDegradation`; on a label it is refused with a `PrintError`.
+
+This module re-exports `SwiftPrintCore`, which holds the document model, both layouts and the
+driver and transport protocols. Drivers live in `SwiftPrintESCPOS` and `SwiftPrintZPL`.
 
 ## Topics
 
 ### Essentials
 
 - <doc:GettingStarted>
-- ``ReceiptContent``
-- ``ReceiptPrinter``
+- <doc:PrintingLabels>
+- ``PrintContent``
+- ``Printer``
+
+### Layouts
+
+- ``ReceiptLayout``
+- ``LabelLayout``
 
 ### Text
 
@@ -44,7 +56,7 @@ and the driver protocol.
 - ``Divider``
 - ``Feed``
 
-### Layout
+### Arranging content
 
 - ``VStack``
 - ``HStack``
@@ -56,6 +68,7 @@ and the driver protocol.
 
 - ``Image``
 - ``QRCode``
+- ``Barcode``
 
 ### Styling
 
@@ -63,8 +76,4 @@ and the driver protocol.
 
 ### Building content
 
-- ``ReceiptBuilder``
-
-### ESC/POS printers
-
-- <doc:PrintingWithESCPOS>
+- ``PrintBuilder``

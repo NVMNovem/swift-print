@@ -5,8 +5,8 @@
 //  Created by Damian Van de Kauter on 25/10/2026.
 //
 
-/// Empty lines.
-public struct Feed: ReceiptContent {
+/// Empty lines, each as tall as a line of plain text.
+public struct Feed: PrintContent {
     let lines: Int
 
     /// `lines` empty lines; a negative count is none.
@@ -18,7 +18,7 @@ public struct Feed: ReceiptContent {
         return fatalError("Feed has no body.")
     }
 
-    public func _receiptNodes() -> _ReceiptNodes {
-        _ReceiptNodes([.feed(lines)])
+    public func _printNodes() -> _PrintNodes {
+        _PrintNodes([.feed(lines)])
     }
 }

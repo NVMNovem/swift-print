@@ -1,64 +1,86 @@
 # ``SwiftPrintCore``
 
-The printer-independent receipt model, its layout and the driver protocol.
+The printer-independent document model, the receipt and label layouts, and the driver and
+transport protocols.
 
 ## Overview
 
-`SwiftPrint` builds on this module and re-exports it; import it on its own to work with
-documents and drivers without the declarative content.
+`SwiftPrint` builds on this module and re-exports it; import it on its own to work with documents,
+layouts and drivers without the declarative content. It has no dependencies and does no I/O.
 
-A receipt passes through three stages:
+A document passes through three stages here:
 
-1. A ``ReceiptDocument`` says what is on the receipt and how it should look, as
-   ``ReceiptBlock``s. It never contains a cut, a drawer kick or a beep: those are chosen with
-   ``PrintOptions``.
-2. ``ReceiptLayout`` places the document on one printer's paper, measured through that printer's
-   ``TextMetrics``, and degrades whatever its ``ReceiptCapabilities`` lack. The result is a
-   ``LaidOutReceipt``.
-3. A ``ReceiptDriver`` renders the laid-out receipt to a ``RenderedReceipt`` — the bytes for its
-   protocol — and sends them over a ``ReceiptConnection``.
+1. A ``PrintDocument`` says what is printed — ``PrintElement``s, with every style and alignment
+   resolved — and its ``PrintDocument/Format``: a receipt, or a label of a ``LabelSize``. It never
+   contains a cut, a drawer kick or a beep: those are chosen with ``PrintOptions``.
+2. A layout places it for one printer, measured through that printer's metrics:
+   - ``ReceiptLayoutEngine`` lays a receipt out line by line at the paper's width through
+     ``TextMetrics``, degrading what the printer's ``PrintCapabilities`` lack and reporting each
+     ``PrintDegradation``. The result is a ``LaidOutReceipt``.
+   - ``LabelLayoutEngine`` positions a label's elements in dots within its size through
+     ``LabelMetrics``, and throws a ``PrintError`` for content that does not fit or that the
+     printer cannot print. The result is a ``LaidOutLabel``.
+3. A ``ReceiptDriver`` or ``LabelDriver`` renders the laid-out document to a ``RenderedDocument`` —
+   the bytes for its protocol.
 
 Each stage is deterministic: the same document, metrics and options always produce the same
-lines and bytes. Everything printed differently from how it was written is reported as a
-``ReceiptDegradation``.
+output. Sending the bytes is left to the application, optionally behind a ``PrintTransport``.
 
 ## Topics
 
 ### Documents
 
-- ``ReceiptDocument``
-- ``ReceiptBlock``
-- ``ReceiptRow``
+- ``PrintDocument``
+- ``PrintElement``
+- ``LabelSize``
 - ``StyledRun``
 - ``TextStyle``
-- ``ReceiptTextSize``
-- ``ReceiptFont``
-- ``ReceiptAlignment``
-- ``ReceiptImage``
-- ``ReceiptQRCode``
+- ``TextSize``
+- ``PrintFont``
+- ``PrintAlignment``
+- ``PrintImage``
+- ``PrintQRCode``
+- ``PrintBarcode``
 
-### Layout
+### Measurement
 
-- ``ReceiptLayout``
+- ``PrintLength``
+- ``PrintInsets``
+- ``TextMetrics``
+- ``LabelMetrics``
+- ``PrintCapabilities``
+
+### Receipt layout
+
+- ``ReceiptLayoutEngine``
+- ``ReceiptBlock``
+- ``ReceiptRow``
 - ``LaidOutReceipt``
 - ``ReceiptLine``
-- ``ReceiptBitmap``
-- ``TextMetrics``
-- ``ReceiptCapabilities``
-- ``ReceiptDegradation``
+- ``PrintBitmap``
+- ``PrintDegradation``
+
+### Label layout
+
+- ``LabelLayoutEngine``
+- ``LaidOutLabel``
+- ``LabelElement``
+- ``LaidOutDocument``
 
 ### Drivers
 
+- ``PrintDriver``
 - ``ReceiptDriver``
+- ``LabelDriver``
 - ``PlainTextReceiptDriver``
-- ``RenderedReceipt``
+- ``RenderedDocument``
 
 ### Printing
 
-- ``ReceiptConnection``
+- ``PrintTransport``
 - ``PrintOptions``
 - ``ReceiptPaperWidth``
 - ``ReceiptCut``
 - ``PrintOutcome``
-- ``ReceiptPrintError``
-- ``ReceiptPrinterStatus``
+- ``PrintError``
+- ``PrinterStatus``

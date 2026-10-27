@@ -6,22 +6,22 @@
 //
 
 /// Content repeated for every element of a sequence, such as the lines of an order.
-public struct ForEach: ReceiptContent {
-    let nodes: [ReceiptNode]
+public struct ForEach: PrintContent {
+    let nodes: [PrintNode]
 
     /// The content for every element of `data`, in order.
-    public init<Data: Sequence, Content: ReceiptContent>(
+    public init<Data: Sequence, Content: PrintContent>(
         _ data: Data,
-        @ReceiptBuilder content: (Data.Element) -> Content
+        @PrintBuilder content: (Data.Element) -> Content
     ) {
-        self.nodes = data.flatMap { content($0)._receiptNodes().nodes }
+        self.nodes = data.flatMap { content($0)._printNodes().nodes }
     }
 
     public var body: Never {
         return fatalError("ForEach has no body.")
     }
 
-    public func _receiptNodes() -> _ReceiptNodes {
-        _ReceiptNodes(nodes)
+    public func _printNodes() -> _PrintNodes {
+        _PrintNodes(nodes)
     }
 }

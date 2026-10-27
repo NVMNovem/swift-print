@@ -11,9 +11,9 @@ public struct LaidOutReceipt: Sendable, Hashable {
     /// The printed lines, top to bottom.
     public var lines: [ReceiptLine]
     /// Everything printed differently from how it was written.
-    public var degradations: [ReceiptDegradation]
+    public var degradations: [PrintDegradation]
 
-    public init(lines: [ReceiptLine], degradations: [ReceiptDegradation] = []) {
+    public init(lines: [ReceiptLine], degradations: [PrintDegradation] = []) {
         self.lines = lines
         self.degradations = degradations
     }
@@ -26,6 +26,7 @@ public struct LaidOutReceipt: Sendable, Hashable {
             case .blank: ""
             case .image(let bitmap, _): "[image \(bitmap.width)×\(bitmap.height)]"
             case .qrCode(let code, _): "[QR \(code.payload)]"
+            case .barcode(let barcode, _): "[barcode \(barcode.data)]"
             }
         }
         .joined(separator: "\n")

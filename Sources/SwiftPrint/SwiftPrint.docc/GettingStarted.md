@@ -1,11 +1,11 @@
 # Getting Started
 
-Declare a receipt, preview it as text and print it.
+Declare a receipt, preview it as text and render it for a printer.
 
 ## Overview
 
-A receipt is a type that conforms to ``ReceiptContent``. Its ``ReceiptContent/body`` is built with
-``ReceiptBuilder``, so it takes the same statements as a SwiftUI view: content, plain strings, `if`,
+Content is a type that conforms to ``PrintContent``. Its ``PrintContent/body`` is built with
+``PrintBuilder``, so it takes the same statements as a SwiftUI view: content, plain strings, `if`,
 `switch` and `for`.
 
 ### Declare a receipt
@@ -19,14 +19,14 @@ struct OrderLine {
     let price: String
 }
 
-struct OrderReceipt: ReceiptContent {
+struct OrderReceipt: PrintContent {
     let number: Int
     let lines: [OrderLine]
     let total: String
     let note: String?
 
-    var body: some ReceiptContent {
-        VStack(spacing: 1) {
+    var body: some PrintContent {
+        VStack(spacing: .lines(1)) {
             Text("#\(number)").bold().size(.double).alignment(.center)
             Divider()
             ForEach(lines) { line in
@@ -52,45 +52,52 @@ struct OrderReceipt: ReceiptContent {
 }
 ```
 
-- ``VStack`` places content line after line, with empty lines between pieces when you give it a
-  spacing.
-- ``HStack`` makes one row of text columns. Columns before the ``Spacer`` hold to the left edge,
-  columns after it to the right. The column just before the spacer wraps; the others keep their
-  width, so a long product name wraps while its price stays on the first line.
+- ``VStack`` places content one piece under the other. On a receipt its spacing is whole lines;
+  give it `.lines(_:)`.
+- ``HStack`` places content side by side; on a receipt, one row of text columns. Columns before the
+  ``Spacer`` hold to the left edge, columns after it to the right. The column just before the
+  spacer wraps; the others keep their width, so a long product name wraps while its price stays on
+  the first line.
 - ``ForEach`` repeats content for every element of a sequence.
 - Modifiers such as `bold()`, `size(_:)`, `font(_:)` and `alignment(_:)` apply to everything inside
   that has not chosen otherwise. Texts joined with `+` print on one line, each in its own style.
 
+Content outside any layout is a receipt; wrapping it in ``ReceiptLayout`` says so explicitly.
+
 ### Preview it as text
 
-`PlainTextReceiptDriver` renders a receipt as UTF-8 text, one character per cell, with images and
-QR codes as placeholders. It never sends, so it suits previews, logs and tests:
+`PlainTextReceiptDriver` renders a receipt as UTF-8 text, one character per cell, with pictures
+and codes as placeholders, which suits previews, logs and tests:
 
 ```swift
-let preview = ReceiptPrinter(
-    connection: .tcp(host: "localhost"),
-    driver: PlainTextReceiptDriver(),
-    options: PrintOptions(paperWidth: .millimeters80)
-)
+let preview = Printer(driver: PlainTextReceiptDriver(), options: PrintOptions(paperWidth: .millimeters80))
 let rendered = try preview.render(receipt)
 print(String(decoding: rendered.bytes, as: UTF8.self))
 ```
 
-``ReceiptPrinter/render(_:)-(ReceiptDocument)`` and ``ReceiptPrinter/layout(_:)`` do no I/O.
+``Printer/render(_:)-(PrintDocument)`` and ``Printer/layout(_:)`` do no I/O.
 
-### Print it
+### Render it for a printer
 
-Printing needs a driver for the printer's protocol. For ESC/POS printers, see
-<doc:PrintingWithESCPOS>.
+Rendering needs a driver for the printer's protocol: `ESCPOSDriver` from `SwiftPrintESCPOS` for
+receipt printers, `ZPLDriver` from `SwiftPrintZPL` for label printers.
 
 ```swift
-let outcome = try await printer.print(receipt)
+import SwiftPrintESCPOS
+
+let printer = Printer(driver: .escpos(profile: .epsonTM))
+let rendered = try printer.render(receipt)
 ```
 
-Success means the printer accepted every byte. A thrown `ReceiptPrintError` carries a `delivery`:
-only `.notSent` makes trying again safe from printing the receipt twice. Both the outcome and the
-rendered receipt list the degradations — anything printed differently because the printer cannot
-do it, such as a `€` it lacks or a QR code it cannot draw.
+The rendered document lists its degradations — anything printed differently because the printer
+cannot do it, such as a `€` it lacks or a QR code it cannot draw.
 
-``ReceiptPrinter`` does not queue, retry or remember. Each call opens its own connection, and two
-calls to one printer at once are yours to prevent.
+### Send it
+
+SwiftPrint does no networking. Send `rendered.bytes` with the protocol library's network module,
+such as `SwiftESCPOSNetwork`, or give the printer a `PrintTransport` and call
+``Printer/print(_:)-(PrintDocument)``. Success means the printer accepted every byte. A thrown
+`PrintError` carries a `delivery`: only `.notSent` makes trying again safe from printing twice.
+
+``Printer`` does not queue, retry or remember, and two calls to one printer at once are yours to
+prevent.

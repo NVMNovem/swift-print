@@ -14,16 +14,16 @@ public struct TextStyle: Sendable, Hashable {
     /// Whether the text is white on black.
     public var isInverted: Bool
     /// The magnification.
-    public var size: ReceiptTextSize
+    public var size: TextSize
     /// The printer font.
-    public var font: ReceiptFont
+    public var font: PrintFont
 
     public init(
         isBold: Bool = false,
         isUnderlined: Bool = false,
         isInverted: Bool = false,
-        size: ReceiptTextSize = .normal,
-        font: ReceiptFont = .primary
+        size: TextSize = .normal,
+        font: PrintFont = .primary
     ) {
         self.isBold = isBold
         self.isUnderlined = isUnderlined

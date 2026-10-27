@@ -9,23 +9,36 @@ let package = Package(
     products: [
         .library(name: "SwiftPrint", targets: ["SwiftPrint"]),
         .library(name: "SwiftPrintCore", targets: ["SwiftPrintCore"]),
+        .library(name: "SwiftPrintESCPOS", targets: ["SwiftPrintESCPOS"]),
+        .library(name: "SwiftPrintZPL", targets: ["SwiftPrintZPL"]),
         .library(name: "SwiftPrintTesting", targets: ["SwiftPrintTesting"]),
     ],
-    traits: [
-        .default(enabledTraits: []),
-        .trait(name: "ESCPOS", description: "The ESC/POS driver, through swift-escpos."),
-    ],
     dependencies: [
-        // A branch until swift-escpos is tagged; a tagged swift-print needs a version here.
+        // Branches until swift-escpos and swift-zpl are tagged; a tagged swift-print needs versions here.
         .package(url: "https://github.com/NVMNovem/swift-escpos.git", branch: "main"),
+        .package(url: "https://github.com/NVMNovem/swift-zpl.git", branch: "main"),
     ],
     targets: [
+        // The document model, both layouts and the driver protocols: no dependencies, no I/O.
         .target(name: "SwiftPrintCore"),
+        // The declarative content and `Printer`.
         .target(
             name: "SwiftPrint",
+            dependencies: ["SwiftPrintCore"]
+        ),
+        // Protocol adapters. Only the encoding libraries; their network modules stay the app's choice.
+        .target(
+            name: "SwiftPrintESCPOS",
             dependencies: [
                 "SwiftPrintCore",
-                .product(name: "SwiftESCPOS", package: "swift-escpos", condition: .when(traits: ["ESCPOS"])),
+                .product(name: "SwiftESCPOS", package: "swift-escpos"),
+            ]
+        ),
+        .target(
+            name: "SwiftPrintZPL",
+            dependencies: [
+                "SwiftPrintCore",
+                .product(name: "SwiftZPL", package: "swift-zpl"),
             ]
         ),
         .target(
@@ -40,8 +53,24 @@ let package = Package(
             name: "SwiftPrintTests",
             dependencies: [
                 "SwiftPrint",
+                "SwiftPrintCore",
                 "SwiftPrintTesting",
-                .product(name: "SwiftESCPOS", package: "swift-escpos", condition: .when(traits: ["ESCPOS"])),
+            ]
+        ),
+        .testTarget(
+            name: "SwiftPrintESCPOSTests",
+            dependencies: [
+                "SwiftPrint",
+                "SwiftPrintESCPOS",
+                .product(name: "SwiftESCPOS", package: "swift-escpos"),
+            ]
+        ),
+        .testTarget(
+            name: "SwiftPrintZPLTests",
+            dependencies: [
+                "SwiftPrint",
+                "SwiftPrintZPL",
+                .product(name: "SwiftZPL", package: "swift-zpl"),
             ]
         ),
     ],

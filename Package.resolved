@@ -1,5 +1,5 @@
 {
-  "originHash" : "1dbc8a2e276e7b06ae1e16d94f8672f2316f8ab7e288c295f89eb0d2ddcf04d0",
+  "originHash" : "20773876c657201c9ce39dadd260734a67006853f4c0ff6c255833464c9cc3e5",
   "pins" : [
     {
       "identity" : "swift-atomics",
@@ -15,8 +15,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/apple/swift-collections.git",
       "state" : {
-        "revision" : "844289ac455816e193f1dbbe014f3c4dbe429410",
-        "version" : "1.7.4"
+        "revision" : "f96b909e1a9e469620bc5037c1e24e00153f376f",
+        "version" : "1.7.5"
       }
     },
     {
@@ -25,7 +25,7 @@
       "location" : "https://github.com/NVMNovem/swift-escpos.git",
       "state" : {
         "branch" : "main",
-        "revision" : "9272524e01dae9187dfa08354e496bbd2fdddcdd"
+        "revision" : "3303fa8e61ead4a789baffd32309530cec33d12b"
       }
     },
     {
@@ -44,6 +44,15 @@
       "state" : {
         "revision" : "869129b7bf4ecc57b97d0193ad29690ca2134750",
         "version" : "1.8.1"
+      }
+    },
+    {
+      "identity" : "swift-zpl",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/NVMNovem/swift-zpl.git",
+      "state" : {
+        "branch" : "main",
+        "revision" : "a51e7f27fdec4f7a44335cbf16599a35523de6c7"
       }
     }
   ],

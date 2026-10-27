@@ -4,10 +4,10 @@ Test how your application prints, without a printer.
 
 ## Overview
 
-``MockReceiptDriver`` renders receipts as plain text, records everything it was asked to send in
-its ``MockReceiptDriver/journal``, and answers each send with the response you give it. That lets
-you test the receipt you print and how your application handles every outcome — including a
-failure halfway through sending.
+``MockDriver`` prints receipts and labels as plain text, so you can test what your application
+prints. ``MockTransport`` records everything it was asked to send in its
+``MockTransport/journal`` and answers each send with the response you give it, so you can test how
+your application handles every outcome — including a failure halfway through sending.
 
 ```swift
 import SwiftPrint
@@ -15,15 +15,15 @@ import SwiftPrintTesting
 import Testing
 
 @Test func retriesOnlyWhenNothingWasSent() async throws {
-    let driver = MockReceiptDriver(responses: [
-        .failure(ReceiptPrintError(delivery: .partiallySent(confirmedBytes: 12), reason: .disconnected(.writing))),
+    let transport = MockTransport(responses: [
+        .failure(PrintError(delivery: .partiallySent(confirmedBytes: 12), reason: .disconnected(.writing))),
     ])
-    let printer = ReceiptPrinter(connection: .tcp(host: "printer.local"), driver: driver)
+    let printer = Printer(driver: MockDriver(), transport: transport)
 
-    await #expect(throws: ReceiptPrintError.self) {
+    await #expect(throws: PrintError.self) {
         try await printer.print(Text("Order #42"))
     }
-    #expect(await driver.journal.sent.count == 1)
+    #expect(await transport.journal.sent.count == 1)
 }
 ```
 
@@ -31,4 +31,5 @@ import Testing
 
 ### Mocking a printer
 
-- ``MockReceiptDriver``
+- ``MockDriver``
+- ``MockTransport``

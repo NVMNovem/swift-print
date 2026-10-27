@@ -12,7 +12,9 @@ public enum ReceiptLine: Sendable, Hashable {
     /// An empty line.
     case blank
     /// A dithered picture.
-    case image(ReceiptBitmap, alignment: ReceiptAlignment)
+    case image(PrintBitmap, alignment: PrintAlignment)
     /// A QR code.
-    case qrCode(ReceiptQRCode, alignment: ReceiptAlignment)
+    case qrCode(PrintQRCode, alignment: PrintAlignment)
+    /// A barcode.
+    case barcode(PrintBarcode, alignment: PrintAlignment)
 }

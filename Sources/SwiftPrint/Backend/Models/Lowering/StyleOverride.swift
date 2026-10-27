@@ -10,8 +10,8 @@ struct StyleOverride: Hashable, Sendable {
     var isBold: Bool?
     var isUnderlined: Bool?
     var isInverted: Bool?
-    var size: ReceiptTextSize?
-    var font: ReceiptFont?
+    var size: TextSize?
+    var font: PrintFont?
 
     /// This override where it says something, `outer` where it does not: the inner modifier wins.
     func filling(from outer: StyleOverride) -> StyleOverride {

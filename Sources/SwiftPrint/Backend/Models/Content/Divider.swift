@@ -5,11 +5,11 @@
 //  Created by Damian Van de Kauter on 25/10/2026.
 //
 
-/// A line filled with one character.
-public struct Divider: ReceiptContent {
+/// A line across the width: the character repeated on a receipt, a thin rule on a label.
+public struct Divider: PrintContent {
     let character: Character
 
-    /// A line of `character`, as many as fit the paper.
+    /// A line of `character`, as many as fit the width.
     public init(_ character: Character = "-") {
         self.character = character
     }
@@ -18,7 +18,7 @@ public struct Divider: ReceiptContent {
         return fatalError("Divider has no body.")
     }
 
-    public func _receiptNodes() -> _ReceiptNodes {
-        _ReceiptNodes([.divider(character)])
+    public func _printNodes() -> _PrintNodes {
+        _PrintNodes([.divider(character)])
     }
 }

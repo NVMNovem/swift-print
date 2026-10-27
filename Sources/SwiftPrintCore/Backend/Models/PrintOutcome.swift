@@ -5,15 +5,15 @@
 //  Created by Damian Van de Kauter on 25/10/2026.
 //
 
-/// A receipt that was handed to the printer completely.
+/// A document that was handed to the printer completely.
 public struct PrintOutcome: Sendable, Hashable {
     /// What the printer said afterwards.
     public enum Acknowledgement: Sendable, Hashable {
         /// Nothing. The bytes were accepted; whether paper came out is not known.
         case none
         /// The printer reported its status after the job.
-        case statusReported(ReceiptPrinterStatus)
-        /// The printer reported that it finished this job. Only drivers whose protocol genuinely
+        case statusReported(PrinterStatus)
+        /// The printer reported that it finished this job. Only transports whose protocol genuinely
         /// reports completion answer this.
         case completionConfirmed
     }
@@ -23,14 +23,14 @@ public struct PrintOutcome: Sendable, Hashable {
     /// What the printer said afterwards.
     public var acknowledgement: Acknowledgement
     /// Everything printed differently from how it was written.
-    public var degradations: [ReceiptDegradation]
+    public var degradations: [PrintDegradation]
     /// How long sending took.
     public var duration: Duration
 
     public init(
         bytesSent: Int,
         acknowledgement: Acknowledgement = .none,
-        degradations: [ReceiptDegradation] = [],
+        degradations: [PrintDegradation] = [],
         duration: Duration = .zero
     ) {
         self.bytesSent = bytesSent

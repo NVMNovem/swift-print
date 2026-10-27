@@ -5,23 +5,23 @@
 //  Created by Damian Van de Kauter on 25/10/2026.
 //
 
-/// Content with a style or an alignment applied to everything inside it.
-public struct ModifiedContent: ReceiptContent {
-    let nodes: [ReceiptNode]
-    let override: StyleOverride
-    let alignment: ReceiptAlignment?
+/// Content with a style, an alignment or padding applied to everything inside it.
+public struct ModifiedContent: PrintContent {
+    let node: PrintNode
 
-    init(nodes: [ReceiptNode], override: StyleOverride, alignment: ReceiptAlignment?) {
-        self.nodes = nodes
-        self.override = override
-        self.alignment = alignment
+    init(nodes: [PrintNode], override: StyleOverride, alignment: PrintAlignment?) {
+        self.node = .styled(override, alignment: alignment, nodes)
+    }
+
+    init(node: PrintNode) {
+        self.node = node
     }
 
     public var body: Never {
         return fatalError("ModifiedContent has no body.")
     }
 
-    public func _receiptNodes() -> _ReceiptNodes {
-        _ReceiptNodes([.styled(override, alignment: alignment, nodes)])
+    public func _printNodes() -> _PrintNodes {
+        _PrintNodes([node])
     }
 }

@@ -5,16 +5,19 @@
 //  Created by Damian Van de Kauter on 25/10/2026.
 //
 
-/// In an ``HStack``, the point where leading columns end and trailing ones begin. Elsewhere, nothing.
-public struct Spacer: ReceiptContent {
-    /// The split between leading and trailing columns.
+/// Flexible space.
+///
+/// In an ``HStack``, the point where leading pieces end and trailing ones begin. In a ``VStack`` on
+/// a label, the height the stack has left, shared with any other spacers. Elsewhere, nothing.
+public struct Spacer: PrintContent {
+    /// Flexible space.
     public init() {}
 
     public var body: Never {
         return fatalError("Spacer has no body.")
     }
 
-    public func _receiptNodes() -> _ReceiptNodes {
-        _ReceiptNodes([.spacer])
+    public func _printNodes() -> _PrintNodes {
+        _PrintNodes([.spacer])
     }
 }

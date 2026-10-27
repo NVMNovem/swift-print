@@ -4,43 +4,43 @@
 import PackageDescription
 
 let package = Package(
-    name: "swift-receipt",
+    name: "swift-print",
     platforms: [.iOS(.v17), .macOS(.v14), .tvOS(.v17), .watchOS(.v10), .visionOS(.v1)],
     products: [
-        .library(name: "SwiftReceipt", targets: ["SwiftReceipt"]),
-        .library(name: "SwiftReceiptCore", targets: ["SwiftReceiptCore"]),
-        .library(name: "SwiftReceiptTesting", targets: ["SwiftReceiptTesting"]),
+        .library(name: "SwiftPrint", targets: ["SwiftPrint"]),
+        .library(name: "SwiftPrintCore", targets: ["SwiftPrintCore"]),
+        .library(name: "SwiftPrintTesting", targets: ["SwiftPrintTesting"]),
     ],
     traits: [
         .default(enabledTraits: []),
         .trait(name: "ESCPOS", description: "The ESC/POS driver, through swift-escpos."),
     ],
     dependencies: [
-        // A branch until swift-escpos is tagged; a tagged swift-receipt needs a version here.
+        // A branch until swift-escpos is tagged; a tagged swift-print needs a version here.
         .package(url: "https://github.com/NVMNovem/swift-escpos.git", branch: "main"),
     ],
     targets: [
-        .target(name: "SwiftReceiptCore"),
+        .target(name: "SwiftPrintCore"),
         .target(
-            name: "SwiftReceipt",
+            name: "SwiftPrint",
             dependencies: [
-                "SwiftReceiptCore",
+                "SwiftPrintCore",
                 .product(name: "SwiftESCPOS", package: "swift-escpos", condition: .when(traits: ["ESCPOS"])),
             ]
         ),
         .target(
-            name: "SwiftReceiptTesting",
-            dependencies: ["SwiftReceiptCore"]
+            name: "SwiftPrintTesting",
+            dependencies: ["SwiftPrintCore"]
         ),
         .testTarget(
-            name: "SwiftReceiptCoreTests",
-            dependencies: ["SwiftReceiptCore"]
+            name: "SwiftPrintCoreTests",
+            dependencies: ["SwiftPrintCore"]
         ),
         .testTarget(
-            name: "SwiftReceiptTests",
+            name: "SwiftPrintTests",
             dependencies: [
-                "SwiftReceipt",
-                "SwiftReceiptTesting",
+                "SwiftPrint",
+                "SwiftPrintTesting",
                 .product(name: "SwiftESCPOS", package: "swift-escpos", condition: .when(traits: ["ESCPOS"])),
             ]
         ),
